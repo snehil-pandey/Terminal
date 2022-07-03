@@ -1,0 +1,45 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0">
+
+    <script src="terminal.js">
+
+    </script>
+
+    <script>
+
+        function textfocus() {
+
+            document.getElementById("user-input").focus();
+
+        }
+
+    </script>
+
+    <link href="terminal.css" rel="stylesheet" />
+
+</head>
+
+<body onload="init(),load()">
+
+    <div style="position:relative;">
+
+        <canvas id="inp"></canvas>
+
+        <div style="position:absolute;top:20px;" id="content">
+
+            <p id="out" onclick="textfocus()"></p>
+
+            <textarea id="user-input" spellcheck="false" autofocus="on" autocomplete="off" autocapitalize="off"></textarea>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
