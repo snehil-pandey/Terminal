@@ -64,4 +64,8 @@ _For knowing the details of any command_
 ```
 PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ```
+
+## Contributers:  
+[Wixonic](https://www.sololearn.com/Profile/16606191/?ref=app) 
+
 #### <center style="text-align:centre">&copy;Uthando</centre>
