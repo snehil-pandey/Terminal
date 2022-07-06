@@ -64,3 +64,4 @@ _For knowing the details of any command_
 ```
 PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ```
+#### <center style="text-align:centre">&copy;Uthando</centre>
