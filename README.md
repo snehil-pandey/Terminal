@@ -60,3 +60,7 @@ USES: IT DOES THE FOLLOWING COMMANDS:
 ```
 USES: PRINTS THE TEXT WRITTEN
 ```
+_For knowing the details of any command_
+```
+PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
+```
