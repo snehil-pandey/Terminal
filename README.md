@@ -65,7 +65,10 @@ _For knowing the details of any command_
 PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ```
 
+<p>My terminal is <b>case insensitive</b> you can use multiple commands at a time by separating them with <b>' ; '</b>.</p>
+
 ## Contributers:  
 [Wixonic](https://github.com/Wixonic?tab=following) 
-
+    
 #### <center style="text-align:centre">&copy;Uthando</centre>
+  
