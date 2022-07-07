@@ -66,6 +66,6 @@ PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ```
 
 ## Contributers:  
-[Wixonic](https://www.sololearn.com/Profile/16606191/?ref=app) 
+[Wixonic](https://github.com/Wixonic?tab=following) 
 
 #### <center style="text-align:centre">&copy;Uthando</centre>
