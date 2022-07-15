@@ -27,6 +27,7 @@ canvas {
     height: 50vh;
     font-family: courier;
     font-weight: bold;
+    font-size:16px;
 }
 p {
     padding: 1.2px;
@@ -37,7 +38,6 @@ html,body {
     padding: 0;
 }
 #content {
-    width: 100vw;
     overflow-x: hidden;
     overflow-y: auto;
     height: 91%;
@@ -51,22 +51,30 @@ html,body {
 div {
     height: 100%;
 }
-y, iv{
+y{
+    padding: 1.2px;
     color: yellow;
 }
 c{
+    padding: 1.2px;
     color: cyan;
 }
 r{
+    padding: 1.2px;
     color: #ff5050;
 }
 o{
+    padding: 1.2px;
     color: #ff9900;
 }
 w{
+    padding: 1.2px;
     color: white;
 }
 lsk{
     letter-spacing: 0px;
     font-family: Consolas;
+}
+g{
+    color: #5aff00;
 }
