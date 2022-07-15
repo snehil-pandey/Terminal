@@ -1,5 +1,3 @@
-var v = "v.1.7";
-
 var con = 0;
 
 function getOS() {
@@ -59,7 +57,7 @@ try {
         }
         os_v = "Android "+ getAndroidVersion();
     } else if (iosPlatforms.indexOf(platform) !== -1) {
-        os_v = iOSversion();
+        os_v = getOS()+iOSversion();
 
         function iOSversion() {
             if (/iP(hone|od|ad)/.test(navigator.platform)) {
@@ -204,8 +202,10 @@ var name = "[snehil]~";
 d = name+ "$ ";
 b = d.toLowerCase();
 
+var x;
+
 function init() {
-    alert("Type \'list\' to get all command supported.")
+    x = "Type \'<g>list</g>\' to get all command supported.<br>";
     text = document.getElementById("user-input");
     text.value = d;
     text.addEventListener('keypress',
@@ -281,7 +281,7 @@ function whenDown(e) {
 }
 
 function load() {
-    document.getElementById('out').innerHTML = "<c>@root</c>\u2015[bash]<br>";
+    document.getElementById('out').innerHTML = "<c>@root</c>\u2015[terminal]<br><w>"+x+"</w>";
     document.getElementById('content').style.fontSize = document.getElementById('user-input').style.fontSize;
 }
 
@@ -303,9 +303,10 @@ function command(p, l) {
     var ecnt = 0;
     today = new Date();
     if (temp == "cls\\?") {
-        document.getElementById('out').innerHTML += "<y>USES: </y><w>CLEARS THE BASH SCREEN</w><br>";
+        document.getElementById('out').innerHTML += "<y>USES: </y><w>CLEARS THE TERMINAL SCREEN</w><br>";
     } else if (temp == "cls") {
         if (conp == false) {
+            x = "";
             p = "";
             return load();
         } else {
@@ -319,7 +320,12 @@ function command(p, l) {
             document.getElementById('out').innerHTML += "<o>ERROR: </o><w>YOU ARE NOT CONNECTED TO INTERNET</w><br>";
     } else if (temp == "network\\ip") {
         if (navigator.onLine == true) {
+            document.getElementById("user-input").style.visibility = "hidden";
             document.getElementById('out').innerHTML += "<y>PUBLIC IP:  </y>";
+            setTimeout(function () {
+                document.getElementById("user-input").style.visibility = "visible";
+                document.getElementById("user-input").focus();
+            }, 2500);
             return ip();
         } else
             document.getElementById('out').innerHTML += "<o>ERROR: </o><w>YOU ARE NOT CONNECTED TO INTERNET</w><br>";
@@ -333,11 +339,12 @@ function command(p, l) {
             document.getElementById('out').innerHTML += "<w>Connecting to nearest server...<br><lsk id =\"pbar"+con.toString()+"\">hi</lsk></w><br>";
             return connect(con);
         } else {
-            if (conp == true) {
-                document.getElementById("user-input").style.visibility = "hidden";
-            }
             document.getElementById('out').innerHTML += "<o>ERROR: </o><w>CONNECT IS ALREADY RUNNING</w><br>";
         }
+    } else if (temp == "system\\res") {
+        var sW = window.screen.width;
+        var sH = window.screen.height;
+        document.getElementById('out').innerHTML += "<y>HEIGHT :<w>" + sH.toString() + " px<br></w>WIDTH &nbsp;:</y><w>" + sW.toString() + " px<br></w>";
     } else if ((temp == "engage")) {
         if (mat == false) {
             mat = true;
@@ -349,15 +356,15 @@ function command(p, l) {
             document.getElementById('out').innerHTML += "<o>ERROR: </o><w>ENGAGE IS ALREADY RUNNING</w><br>";
         }
     } else if (temp == "echo\\?") {
-        document.getElementById('out').innerHTML += "<y>USES: </y><w>PRINTS THE TEXT WRITTEN</w>";
+        document.getElementById('out').innerHTML += "<y>USES: </y><w>PRINTS THE TEXT WRITTEN</w><br>";
     } else if (temp.substring(0, 4) == "echo") {
         document.getElementById('out').innerHTML += "<w>"+p.substring(4)+"</w><br>";
     } else if (temp == "system\\date") {
         document.getElementById('out').innerHTML += "<y>DATE: </y><w>"+today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear()+"</w><br>";
     } else if (temp == "system\\time") {
         document.getElementById('out').innerHTML += "<y>TIME: </y><w>"+today.getHours() + ": " + today.getMinutes() + ": " + today.getSeconds()+"</w><br>";
-    } else if (temp == "bash-v") {
-        document.getElementById('out').innerHTML += "<y>BASH VERSION: </y><w>"+v+"</w><br>";
+    } else if (temp == "terminal\\v") {
+        document.getElementById('out').innerHTML += "<y>TERMINAL VERSION: </y><w>"+v+"</w><br>";
     } else if (temp == "engage\\abort") {
         if (mat == true) {
             mat = false;
@@ -365,15 +372,18 @@ function command(p, l) {
         } else
             document.getElementById('out').innerHTML += "<o>ERROR: </o><w>ENGAGE COMMAND IS NOT RUNNING</w><br>";
     } else if (temp == "network\\?") {
-        document.getElementById('out').innerHTML += "<y>USES: </y><w>IT DOES THE FOLLOWING COMMANDS: <br></w>&nbsp;\\gateway :<w>TELLS YOUR GATEWAY ADDRESS</w><br>&nbsp;\\ip  &nbsp;&nbsp;&nbsp;&nbsp; :<w>TELLS YOUR PUBLIC IP</w><br>";
+        document.getElementById('out').innerHTML += "<y>USES: </y><w>IT DOES THE FOLLOWING COMMANDS: <br></w>&nbsp;\\gateway :<w>TELLS YOUR GATEWAY ADDRESS</w><br>&nbsp;\\ip  &nbsp;&nbsp;&nbsp;&nbsp; :<w>TELLS YOUR PUBLIC IP</w><br>&nbsp;\\isp&nbsp;&nbsp;&nbsp;&nbsp; :<w>TELLS YOUR INTERNET SERVICE PROVIDER</w><br>";
     } else if (temp == "engage\\?") {
-        document.getElementById('out').innerHTML += "<y>USES: </y><w>TRANSFORMS THE TERMINAL INTO A MATRIX-INSPIRED DISPLAY WHERE SYMBOLS ARE RAINING FROM THE TOP OF THE SCREEN IN DIFFERENT COLORS</w><br> <y>DOES FOLLOWING SUB COMMANDS:</y><br>&nbsp;\\abort : <w>ABORT ENGAGE COMMAND</w><br>";
+        document.getElementById('out').innerHTML += "<y>USES: </y><w>TRANSFORMS THE TERMINAL INTO A MATRIX-INSPIRED DISPLAY WHERE SYMBOLS ARE RAINING FROM THE TOP OF THE SCREEN IN DIFFERENT COLORS</w><br> <y>SUB-COMMANDS:</y><br>&nbsp;\\abort : <w>ABORT ENGAGE COMMAND</w><br>";
     } else if (temp == "list\\?") {
         document.getElementById('out').innerHTML += "<y>USES: </y><w>LISTS ALL THE SUPPORTED COMMANDS</w><br>";
     } else if (temp == "list") {
-        document.getElementById('out').innerHTML += "<y>list &nbsp;&nbsp;&nbsp;&nbsp;:<w>LISTS ALL THE SUPPORTED COMMANDS</w><br>cls &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:<w>CLEARS THE BASH SCREEN</w><br><y>connect &nbsp;:<w>THIS SHOWS A PROGRESS BAR UI</w><br>engage &nbsp;&nbsp;:<w>TRANSFORMS THE TERMINAL INTO A MATRIX-INSPIRED DISPLAY WHERE SYMBOLS ARE RAINING FROM THE TOP OF THE SCREEN IN DIFFERENT COLORS</w><br>network &nbsp;:<w>CONTAINS SUB COMMAND RELATED TO NETWORK</w><br>system &nbsp;&nbsp;:<w>CONTAINS SUB COMMAND RELATED TO SYSTEM</w><br>echo <w>text</w>:<w>PRINTS THE TEXT WRITTEN</w><br></y><w> <br>PUT \'<y>\\?</y>\' AFTER ANY COMMAND TO KNOW ABOUT IT</w><br>";
+        document.getElementById('out').innerHTML += "<g>list &nbsp;&nbsp;&nbsp;&nbsp;:<w>LISTS ALL THE SUPPORTED COMMANDS</w><br>terminal :<w>STARTS A NEW TERMINAL</w><br>cls &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:<w>CLEARS THE TERMINAL SCREEN</w><br><g>connect &nbsp;:<w>THIS SHOWS A PROGRESS BAR UI</w><br>engage &nbsp;&nbsp;:<w>TRANSFORMS THE TERMINAL INTO A MATRIX-INSPIRED DISPLAY WHERE SYMBOLS ARE RAINING FROM THE TOP OF THE SCREEN IN DIFFERENT COLORS</w><br>network &nbsp;:<w>CONTAINS SUB COMMAND RELATED TO NETWORK</w><br>system &nbsp;&nbsp;:<w>CONTAINS SUB COMMAND RELATED TO SYSTEM</w><br>echo <w>text</w>:<w>PRINTS THE TEXT WRITTEN</w><br></g><w> <br>PUT \'<y>\\?</y>\' AFTER ANY COMMAND TO KNOW ABOUT IT</w><br>";
     } else if (temp == "system\\?") {
-        document.getElementById('out').innerHTML += "<y>USES: </y><w>IT DOES THE FOLLOWING COMMANDS: <br></w>&nbsp;\\time&nbsp;&nbsp;&nbsp; : <w>TELLS SYSTEM TIME</w><br>&nbsp;\\date &nbsp&nbsp;&nbsp;: <w>TELLS SYSTEM DATE</w><br>&nbsp;\\platform: <w>TELLS YOUR DEVICE OPERATING SYSTEM</w><br>&nbsp;\\version&nbsp;:<w>TELLS YOUR DEVICE VERSION</w><br>";
+        document.getElementById('out').innerHTML += "<y>USES: </y><w>IT DOES THE FOLLOWING COMMANDS: <br></w>&nbsp;\\time&nbsp;&nbsp;&nbsp; : <w>TELLS SYSTEM TIME</w><br>&nbsp;\\date &nbsp&nbsp;&nbsp;: <w>TELLS SYSTEM DATE</w><br>&nbsp;\\platform: <w>TELLS YOUR DEVICE'S OPERATING SYSTEM</w><br>&nbsp;\\version&nbsp;:<w>TELLS YOUR DEVICE'S VERSION</w><br>&nbsp;\\res&nbsp;&nbsp;&nbsp;&nbsp; :<w>TELLS YOUR DEVICE'S SCREEN RESOLUTION</w><br>&nbsp;\\battery&nbsp;&nbsp;&nbsp;&nbsp; :<w>TELLS YOUR DEVICE'S BATTERY STATUS AND LEVEL</w><br>";
+    } else if (temp == "terminal") {
+        x = "Type \'<g>list</g>\' to get all command supported.<br>";
+        load();
     } else if (temp == "system\\platform") {
         document.getElementById('out').innerHTML += "<y>DEVICE PLATFORM:</y> <w>"+os+"</y><br>";
     } else if (temp == "system\\version") {
@@ -382,6 +392,21 @@ function command(p, l) {
         document.getElementById('out').innerHTML += "<o>ERROR:</o><w>THIS COMMAND HAS SOME SUB COMMANDS TO LEARN ABOUT THEM TYPE '</w>network\\?<w>'</w><br>";
     } else if (temp == "system") {
         document.getElementById('out').innerHTML += "<o>ERROR:</o><w>THIS COMMAND HAS SOME SUB COMMANDS TO LEARN ABOUT THEM TYPE '</w>system\\?<w>'</w><br>";
+    } else if (p == "network\\isp") {
+        document.getElementById('out').innerHTML += "<y>ISP: </y>";
+        document.getElementById("user-input").style.visibility = "hidden";
+        setTimeout(function () {
+            document.getElementById("user-input").style.visibility = "visible";
+            document.getElementById("user-input").focus();
+        }, 2500);
+        return isp();
+    } else if (p == "terminal\\?") {
+        document.getElementById('out').innerHTML += "<y>USES:</y><w> STARTS A NEW TERMINAL<br><y>SUB-COMMANDS:</y><br>&nbsp;<g>\\rn</g>:TO GET TERMINAL RELEASE NOTES ON <a href=\"https://github.com/Uthando993\" style=\"text-decoration:none;color:cyan\">GitHub</a><br>&nbsp;<g>\\v</g> :TO GET TERMINAL VERSION";
+    } else if (p == "system\\battery") {
+        return batt();
+    } else if (p == "terminal\\rn") {
+        location.assign('https://github.com/Uthando993/Terminal/blob/main/release%20notes.md');
+        document.getElementById('out').innerHTML += "<w>PLEASE CLICK OK IF IT ASK FOR REDIRECT MESSAGE... "
     } else if (p == "") {
         //no condition
     } else {
@@ -451,8 +476,32 @@ function connect(y) {
 
 }
 
-function netcon() {
-    if (navigator.onLine == false) {
-        alert("You are offline.");
-    }
+function isp() {
+    let ok = "";
+    $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: 'http://ip-api.com/json?callback=?',
+        success: function(data) {
+            ok = JSON.stringify(data["isp"]);
+            document.getElementById('out').innerHTML += "<w>"+ok.replace(/\"/g, "")+"</w><br>";
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {}
+    });
 }
+
+function batt() {
+    navigator.getBattery().then(function(battery) {
+        // Battery level is between 0 and 1, so we multiply it by 100 to get in percents
+        document.getElementById('out').innerHTML += "<y>BATTERY LEVEL&nbsp; : </y><w>" + Math.round(battery.level* 100) + "%</w><br>";
+    });
+    navigator.getBattery().then(function(battery) {
+        if (battery.charging) {
+            document.getElementById('out').innerHTML += "<y>CHARGING STATUS: <y><w>CHARGING</w><br>";
+        } else {
+            document.getElementById('out').innerHTML += "<y>CHARGING STATUS: <y><w>NOT CHARGING</w><br>";
+        }
+    });
+}
+
+var v = "v.2.1";
