@@ -20,6 +20,7 @@ canvas {
     outline: none;
 }
 #user-input {
+    font-size: 5px;
     background-color: transparent;
     border: none;
     color: #5aff00;
