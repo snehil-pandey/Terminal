@@ -1,7 +1,7 @@
 # Terminal
 A Web Based Terminal based on my command currently it is under development.   
-If you want to see it's live preview it can be viewed on **Sololearn** , link:
-**[Terminal](https://code.sololearn.com/W9ecnKNy3QGu/?ref=app)**  
+If you want to see it's live preview it can be viewed on the link:
+**[Terminal](https://uthando993.github.io/Terminal/terminal.html)**  
 
   
 Kindly help me in my project by reporting the **errors faced** by you and if there is any **glitch**.  
