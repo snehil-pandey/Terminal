@@ -18,8 +18,8 @@ canvas {
     outline: none;
 }
 #user-input {
-    font-size: inherit;
-    font-weight: inherit;
+    font-size: 16px;
+    font-weight: bold;
     background-color: transparent;
     border: none;
     color: #5aff00;
