@@ -1,3 +1,7 @@
+var script = document.createElement('script');
+script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
+document.getElementsByTagName('head')[0].appendChild(script);
+
 var con = 0;
 
 function getOS() {
@@ -282,7 +286,6 @@ function whenDown(e) {
 
 function load() {
     document.getElementById('out').innerHTML = "<c>@root</c>\u2015[terminal]<br><w>"+x+"</w>";
-    document.getElementById('content').style.fontSize = document.getElementById('user-input').style.fontSize;
 }
 
 function command(p, l) {
@@ -342,8 +345,8 @@ function command(p, l) {
             document.getElementById('out').innerHTML += "<o>ERROR: </o><w>CONNECT IS ALREADY RUNNING</w><br>";
         }
     } else if (temp == "system\\res") {
-        var sW = window.screen.width;
-        var sH = window.screen.height;
+        var sW = window.screen.width*window.devicePixelRatio;
+        var sH = window.screen.height*window.devicePixelRatio;
         document.getElementById('out').innerHTML += "<y>HEIGHT :<w>" + sH.toString() + " px<br></w>WIDTH &nbsp;:</y><w>" + sW.toString() + " px<br></w>";
     } else if ((temp == "engage")) {
         if (mat == false) {
@@ -457,7 +460,7 @@ function connect(y) {
     var count = 0;
     var idel = "#pbar"+y.toString();
 
-    setInterval(function() {
+    var t = setInterval(function() {
         count = (count < 100)? count+1: 100;
         if (count == 0)
             bars = bar;
@@ -469,6 +472,7 @@ function connect(y) {
             document.querySelector(idel). innerHTML += `<w><br>Connected Successfully...</w>`;
             document.getElementById("user-input").style.visibility = "visible";
             document.getElementById("user-input").focus();
+        return clearTimeout(t);
         } else
             document.getElementById("user-input").style.visibility = "hidden";
     },
@@ -491,8 +495,8 @@ function isp() {
 }
 
 function batt() {
-    navigator.getBattery().then(function(battery) {
-        // Battery level is between 0 and 1, so we multiply it by 100 to get in percents
+   if ('getBattery' in navigator) {
+  navigator.getBattery().then(function(battery) {
         document.getElementById('out').innerHTML += "<y>BATTERY LEVEL&nbsp; : </y><w>" + Math.round(battery.level* 100) + "%</w><br>";
     });
     navigator.getBattery().then(function(battery) {
@@ -502,6 +506,9 @@ function batt() {
             document.getElementById('out').innerHTML += "<y>CHARGING STATUS: <y><w>NOT CHARGING</w><br>";
         }
     });
+} else {
+  document.getElementById('out').innerHTML += "<w>THIS API FUNCTION IS NOT SUPPORTED ON THIS BROWSER</w>";
+} 
 }
 
-var v = "v.2.1";
+var v = "v.2.2";
