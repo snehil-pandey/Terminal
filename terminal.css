@@ -24,7 +24,7 @@ canvas {
     resize: none;
     font-family: Courier;
     width: 90%;
-    height: 90%;
+    height: 100%;
     font-family: courier;
     font-weight: bold;
 }
@@ -35,13 +35,13 @@ p {
 html,body {
     margin: 0;
     padding: 0;
-    height: 95%;
+    height: 95vh;
 }
 #content {
     margin-right: 1.9px;
     overflow-x: hidden;
     overflow-y: auto;
-    height: 95%;
+    height: 95vh;
     -ms-overflow-style: none;
     scrollbar-width: none;
     overflow: -moz-scrollbars-none;
