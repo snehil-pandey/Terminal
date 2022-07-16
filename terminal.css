@@ -22,7 +22,7 @@ canvas {
     border: none;
     color: #5aff00;
     resize: none;
-    font-family: Courier;
+    font-family: inherit;
     width: 90vw;
     height: 100vh;
     font-family: courier;
