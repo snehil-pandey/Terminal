@@ -72,4 +72,8 @@
 
 ### v.2.1
 • Addition of 'terminal\rn' to get release notes of Terminal  
-• Addition of 'system\battery' command to get battery level and status
+• Addition of 'system\battery' command to get battery level and status  
+
+### v.2.2
+• Correction of output when 'system\res' command is called  
+• Implementation of error handling when 'system\battery' command is called
