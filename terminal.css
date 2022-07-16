@@ -18,6 +18,8 @@ canvas {
     outline: none;
 }
 #user-input {
+    font-size: inherit;
+    font-weight: inherit;
     background-color: transparent;
     border: none;
     color: #5aff00;
@@ -25,8 +27,6 @@ canvas {
     font-family: inherit;
     width: 90vw;
     height: 100vh;
-    font-family: courier;
-    font-weight: bold;
 }
 p {
     padding: 1.2px;
