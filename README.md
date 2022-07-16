@@ -76,7 +76,7 @@ PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 
 <p>My terminal is <b>case insensitive</b> you can use multiple commands at a time by separating them with <b>' ; '</b>.</p>
 
-## Contributers:  
+## People who helped in reporting glitch, problem or any error:  
 [Wixonic](https://github.com/Wixonic?tab=following) 
     
 #### <center style="text-align:centre">&copy;Uthando</centre>
