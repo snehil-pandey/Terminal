@@ -2,11 +2,11 @@
     border: none;
     font-family: Courier;
     margin: 0;
-    font-size: 16px;
+    font-size: 48px;
 }
 body {
     background: #000;
-    font-size: 16px;
+    font-size: 48px;
     color: #76ff26;
 }
 canvas {
