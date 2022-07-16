@@ -79,5 +79,5 @@ PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ## People who helped in reporting glitch, problem or any error:  
 [Wixonic](https://github.com/Wixonic?tab=following) 
     
-#### <center style="text-align:centre">&copy;Uthando</centre>
+#### &copy;Uthando
   
