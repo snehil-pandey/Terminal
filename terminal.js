@@ -487,7 +487,9 @@ function isp() {
             ok = JSON.stringify(data["isp"]);
             document.getElementById('out').innerHTML += "<w>"+ok.replace(/\"/g, "")+"</w><br>";
         },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {}
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            document.getElementById('out').innerHTML += "<w>undefined</w>"
+        }
     });
 }
 
