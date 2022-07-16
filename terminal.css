@@ -18,15 +18,16 @@ canvas {
     outline: none;
 }
 #user-input {
-    font-size: 16px;
-    font-weight: bold;
     background-color: transparent;
     border: none;
     color: #5aff00;
     resize: none;
-    font-family: inherit;
-    width: 90vw;
-    height: 100vh;
+    font-family: Courier;
+    width: 98vw;
+    height: 50vh;
+    font-family: courier;
+    font-weight: bold;
+    font-size:16px;
 }
 p {
     padding: 1.2px;
@@ -35,13 +36,13 @@ p {
 html,body {
     margin: 0;
     padding: 0;
-    height: 98vh;
+    height: 95vh;
 }
 #content {
     margin-right: 1.9px;
     overflow-x: hidden;
     overflow-y: auto;
-    height: 98vh;
+    height: 95vh;
     -ms-overflow-style: none;
     scrollbar-width: none;
     overflow: -moz-scrollbars-none;
