@@ -6,6 +6,7 @@
 }
 body {
     background: #000;
+    font-size: 16px;
     color: #76ff26;
 }
 canvas {
