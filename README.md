@@ -74,7 +74,7 @@ _For knowing the details of any command_
 PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ```
 
-<p>My terminal is <b>case insensitive</b> you can use multiple commands at a time by separating them with <b>' ; '</b>.</p>
+<p>My terminal is <b>case insensitive</b> you can use multiple commands at a time by separating them with <b>';'</b>.</p>
 
 ## People who helped in reporting glitch, problem or any error:  
 [Wixonic](https://github.com/Wixonic?tab=following) 
