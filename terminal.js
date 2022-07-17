@@ -488,7 +488,7 @@ function isp() {
             document.getElementById('out').innerHTML += "<w>"+ok.replace(/\"/g, "")+"</w><br>";
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
-            document.getElementById('out').innerHTML += "<w>undefined</w>"
+            document.getElementById('out').innerHTML += "<w>undefined</w><br>";
         }
     });
 }
