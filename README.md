@@ -1,5 +1,6 @@
-# Terminal
-A Web Based Terminal based on my command currently it is under development.   
+# Terminal  
+
+A Web Based Terminal[Mobile Version] based on my command currently it is under development.   
 If you want to see it's live preview it can be viewed on the link:
 **[Terminal](https://uthando993.github.io/Terminal/terminal.html)**  
 
