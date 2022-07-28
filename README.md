@@ -81,5 +81,5 @@ PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ## People who helped in reporting glitch, problem or any error:  
 [Wixonic](https://github.com/Wixonic?tab=following) 
     
-#### &copy;Uthando
+#### [&copy;Uthando](https://uthando993.github.io) 
   
