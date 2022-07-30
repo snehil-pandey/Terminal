@@ -27,7 +27,7 @@ canvas {
     height: 100%;
     font-family: courier;
     font-weight: bold;
-    font-size:inherit;
+    font-size: 7px;
 }
 p {
     padding: 1.2px;
