@@ -405,7 +405,7 @@ function command(p, l) {
     } else if (p == "system\\battery") {
         return batt();
     } else if (p == "terminal\\rn") {
-        location.assign('/release%20notes.md');
+        location.assign('/release notes.md');
         document.getElementById('out').innerHTML += "<w>PLEASE CLICK OK IF IT ASK FOR REDIRECT MESSAGE... "
     } else if (p == "") {
         //no condition
