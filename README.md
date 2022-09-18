@@ -1,6 +1,6 @@
 # Terminal  
 
-A Web Based Terminal[Mobile Version] based on my command currently it is under development.   
+A Web Based Terminal[Desktop Graphics Version] based on my command currently it is under development.   
 If you want to see it's live preview it can be viewed on the link:
 **[Terminal](https://uthando993.github.io/Terminal/terminal.html)**  
 
@@ -78,8 +78,6 @@ PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 
 <p>My terminal is <b>case insensitive</b> you can use multiple commands at a time by separating them with <b>';'</b>.</p>
 
-## People who helped in reporting glitch, problem or any error:  
-[Wixonic](https://github.com/Wixonic?tab=following) 
-    
+   
 #### [&copy;Uthando](https://uthando993.github.io) 
   
