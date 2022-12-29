@@ -2,7 +2,7 @@
 
 A Web Based Terminal[Desktop Graphics Version] based on my command currently it is under development.   
 If you want to see it's live preview it can be viewed on the link:
-**[Terminal](https://uthando993.github.io/Terminal/terminal.html)**  
+**[Terminal](https://snehil-pandey.github.io/Terminal/terminal.html)**  
 
   
 Kindly help me in my project by reporting the **errors faced** by you and if there is any **glitch**.  
@@ -76,8 +76,8 @@ _For knowing the details of any command_
 PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
 ```
 
-<p>My terminal is <b>case insensitive</b> you can use multiple commands at a time by separating them with <b>';'</b>.</p>
+<p>My terminal is <b>case insensitive</b><br>You can use multiple commands at a time by separating them with <b>';'</b>.</p>
 
    
-#### [&copy;Uthando](https://uthando993.github.io) 
+#### [&copy; Snehil Pandey](https://snehil-pandey.github.io) 
   
