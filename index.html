@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Peak Cybersecurity: Strict Content Security Policy preventing unauthorized script injections -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:;">
+    <meta name="description" content="WebLinux Terminal - Authentic Streamlined Linux CLI Interface">
+    <title>WebLinux CLI Terminal</title>
+    <link rel="stylesheet" href="terminal.css">
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+
+    <div id="content">
+        <!-- Command history & output stream -->
+        <p id="out"></p>
+        <!-- Inline input prompt: type command, press Enter, output appears immediately below it -->
+        <div id="input-line">
+            <span id="prompt-label"></span>
+            <input 
+                id="user-input" 
+                type="text" 
+                spellcheck="false" 
+                autocomplete="off" 
+                autocorrect="off" 
+                autocapitalize="off" 
+                aria-label="Terminal command prompt" 
+                autofocus
+            />
+        </div>
+    </div>
+
+    <!-- Core Modular Architecture Scripts -->
+    <script src="src/core/security.js"></script>
+    <script src="src/core/storage.js"></script>
+    <script src="src/fs/vfs.js"></script>
+    <script src="src/ui/theme.js"></script>
+    <script src="src/commands/registry.js"></script>
+    <script src="src/core/shell.js"></script>
+    <!-- Entrypoint Controller -->
+    <script src="terminal.js"></script>
+</body>
+</html>

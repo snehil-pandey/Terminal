@@ -1,82 +1,143 @@
+:root {
+    --term-bg: #000000;
+    --term-fg: #5aff00;
+    --term-prompt: #76ff26;
+    --term-user: #00ff88;
+    --term-host: #5aff00;
+    --term-path: #00e5ff;
+    --term-border: #153d10;
+    --term-selection: rgba(90, 255, 0, 0.25);
+    --term-error: #ff4d4d;
+    --term-warn: #ffd152;
+    --term-info: #40c4ff;
+    --term-font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', Courier, monospace;
+}
+
 * {
+    box-sizing: border-box;
     border: none;
-    font-family: Courier;
     margin: 0;
+    padding: 0;
+    font-family: var(--term-font);
 }
-body {
-    background: #000;
-    color: #76ff26;
-}
-canvas {
-    display: block;
-    border: none;
-    resize: auto;
-    overflow-x: auto;
+
+html, body {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--term-bg);
+    color: var(--term-fg);
+    font-size: 15px;
+    line-height: 1.45;
+    overflow-x: hidden;
     overflow-y: auto;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* Background Matrix Canvas */
+#matrix-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.8;
+}
+
+/* Content container matching original layout with bottom padding to keep prompt in upper half */
+#content {
+    position: relative;
+    z-index: 2;
+    padding: 16px 20px calc(52vh + 40px) 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+/* Output stream: text flows top to bottom */
+#out {
+    font-weight: bold;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    cursor: text;
+}
+
+/* Inline active input line directly under the latest output */
+#input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 2px;
+    line-height: 1.5;
+}
+
+#prompt-label {
+    white-space: nowrap;
+    user-select: none;
+    margin-right: 6px;
+    font-weight: bold;
+}
+
+#user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--term-fg);
+    font-family: inherit;
+    font-weight: bold;
+    font-size: inherit;
+    caret-color: var(--term-prompt);
+    padding: 0;
+    width: 100%;
+}
+
 #user-input:focus {
     outline: none;
 }
-#user-input {
-    background-color: transparent;
-    border: none;
-    color: #5aff00;
-    resize: none;
-    font-family: Courier;
-    width: 98%;
-    height: 100%;
-    font-family: courier;
-    font-weight: bold;
-    font-size: inherit;
-}
-p {
-    padding: 1.2px;
+
+/* Legacy & Semantic Highlight Tags */
+g {
+    color: var(--term-prompt);
     font-weight: bold;
 }
-html,body {
-    margin: 0;
-    padding: 0;
-    height: 95vh;
+
+c {
+    color: var(--term-path);
+    font-weight: bold;
 }
-#content {
-    margin-right: 1.9px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    height: 95vh;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    overflow: -moz-scrollbars-none;
+
+y {
+    color: var(--term-warn);
+    font-weight: bold;
 }
-#content::-webkit-scrollbar {
-    display: none;
+
+o {
+    color: var(--term-error);
+    font-weight: bold;
 }
-div {
-    height: 100%;
+
+w {
+    color: var(--term-fg);
 }
-y{
-    padding: 1.2px;
-    color: yellow;
+
+r {
+    color: var(--term-error);
 }
-c{
-    padding: 1.2px;
-    color: cyan;
+
+iv {
+    color: #ffffff;
+    font-weight: bold;
 }
-r{
-    padding: 1.2px;
-    color: #ff5050;
-}
-o{
-    padding: 1.2px;
-    color: #ff9900;
-}
-w{
-    padding: 1.2px;
-    color: white;
-}
-lsk{
+
+lsk {
     letter-spacing: 0px;
-    font-family: Consolas;
+    font-family: Consolas, monospace;
 }
-g{
-    color: #5aff00;
+
+::selection {
+    background-color: var(--term-selection);
+    color: #ffffff;
 }
