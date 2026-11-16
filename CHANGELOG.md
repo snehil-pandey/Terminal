@@ -17,7 +17,7 @@ All notable changes to the Panfam-Terminal project are documented in this file.
 - **Virtual Network Subsystem**: Simulated interfaces (`eth0`, `lo`), IP routing table, socket inspection (`ss`), and virtual DNS resolver integrated with `/etc/hosts` and `/etc/resolv.conf`.
 - **Domain Command Ecosystem**: Over 30 Linux utilities across Filesystem (`tree`, `stat`, `find`, `du`, `df`), Text Processing (`sed`, `awk`, `cut`, `sort`, `uniq`, `tr`, `tee`, `diff`), System (`free`, `top`, `sleep`), Network (`ip`, `dig`, `nslookup`, `ss`), and Development (`git`, `apt`, `base64`, `sha256sum`).
 - **Standardized Execution Model**: Structured `ExecutionResult` separating stdout, stderr, and integer exit codes.
-- **Comprehensive Documentation Suite**: Added [UPGRADE_AUDIT.md](file:///S:/Common/projects/Terminal/documentation/UPGRADE_AUDIT.md), [SECURITY.md](file:///S:/Common/projects/Terminal/documentation/SECURITY.md), [COMMAND_REFERENCE.md](file:///S:/Common/projects/Terminal/documentation/COMMAND_REFERENCE.md), and [TESTING.md](file:///S:/Common/projects/Terminal/documentation/TESTING.md).
+- **Comprehensive Documentation Suite**: Added [UPGRADE_AUDIT.md](./documentation/UPGRADE_AUDIT.md), [SECURITY.md](./documentation/SECURITY.md), [COMMAND_REFERENCE.md](./documentation/COMMAND_REFERENCE.md), and [TESTING.md](./documentation/TESTING.md).
 
 ### Changed
 - Reconstructed shell execution engine to evaluate AST trees instead of naive string splitting.

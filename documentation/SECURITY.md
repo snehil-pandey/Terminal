@@ -14,11 +14,11 @@
         │  [ STRICT BOUNDARY - No Node child_process, No eval(), No local filesystem ]
         ▼
 [ Panfam-Terminal Execution Sandbox ]
-   ├── TerminalSecurity ([security.js](file:///S:/Common/projects/Terminal/src/core/security.js))
-   ├── POSIX Lexer & Parser ([lexer.js](file:///S:/Common/projects/Terminal/src/core/lexer.js), [parser.js](file:///S:/Common/projects/Terminal/src/core/parser.js))
-   ├── Virtual File System ([vfs.js](file:///S:/Common/projects/Terminal/src/fs/vfs.js)) & Storage ([storage.js](file:///S:/Common/projects/Terminal/src/core/storage.js))
-   ├── Virtual Network Subsystem ([network.js](file:///S:/Common/projects/Terminal/src/net/network.js))
-   └── Command Registries ([registry.js](file:///S:/Common/projects/Terminal/src/commands/registry.js))
+   ├── TerminalSecurity ([security.js](../src/core/security.js))
+   ├── POSIX Lexer & Parser ([lexer.js](../src/core/lexer.js), [parser.js](../src/core/parser.js))
+   ├── Virtual File System ([vfs.js](../src/fs/vfs.js)) & Storage ([storage.js](../src/core/storage.js))
+   ├── Virtual Network Subsystem ([network.js](../src/net/network.js))
+   └── Command Registries ([registry.js](../src/commands/registry.js))
 ```
 
 1. **Host Isolation**: The terminal executes entirely in the client-side JavaScript sandbox. It has zero capability to interact with, invoke, or modify the host operating system, files, or hardware.
@@ -52,7 +52,7 @@
 
 ## 3. Content Security Policy (CSP)
 
-Implemented in [`index.html`](file:///S:/Common/projects/Terminal/index.html):
+Implemented in [`index.html`](../index.html):
 ```http
 default-src 'self';
 script-src 'self' 'unsafe-inline';

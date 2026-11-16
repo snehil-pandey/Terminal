@@ -78,9 +78,9 @@ print("Result is:", res)
 ```
 
 ### 3.2 Compiler & Interpreter Subsystems
-- **Lexer** ([`src/pf/lexer.js`](file:///S:/Common/projects/Terminal/src/pf/lexer.js)): Tokenizes keywords (`class`, `function`, `let`, `if`, `while`, `return`, `self`), symbols, and operators.
-- **Parser** ([`src/pf/parser.js`](file:///S:/Common/projects/Terminal/src/pf/parser.js)): Builds AST nodes (`ClassDecl`, `FuncDecl`, `VarDecl`, `IfStmt`, `WhileStmt`, `CallExpr`, `MemberExpr`, `AssignExpr`).
-- **Interpreter** ([`src/pf/interpreter.js`](file:///S:/Common/projects/Terminal/src/pf/interpreter.js)): Tree-walk virtual execution engine without `eval()` or `new Function()`. Includes standard library modules (`std.io`, `std.math`, `std.system`) and loop safety guards.
+- **Lexer** ([`src/pf/lexer.js`](../src/pf/lexer.js)): Tokenizes keywords (`class`, `function`, `let`, `if`, `while`, `return`, `self`), symbols, and operators.
+- **Parser** ([`src/pf/parser.js`](../src/pf/parser.js)): Builds AST nodes (`ClassDecl`, `FuncDecl`, `VarDecl`, `IfStmt`, `WhileStmt`, `CallExpr`, `MemberExpr`, `AssignExpr`).
+- **Interpreter** ([`src/pf/interpreter.js`](../src/pf/interpreter.js)): Tree-walk virtual execution engine without `eval()` or `new Function()`. Includes standard library modules (`std.io`, `std.math`, `std.system`) and loop safety guards.
 
 ---
 

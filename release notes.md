@@ -35,9 +35,9 @@
   - Intelligent Tab auto-completion for both built-in commands and VFS filesystem paths
   - Matrix digital rain retained with enhanced cleanup controls (`matrix` / `engage`)
 • **Testing & Quality Assurance**:
-  - Standalone automated test suite ([test_suite.js](file:///S:/Common/projects/Terminal/tests/test_suite.js)) verifying security sanitization, filesystem integrity, and command pipelines. See [TESTING.md](file:///S:/Common/projects/Terminal/documentation/TESTING.md).
+  - Standalone automated test suite ([test_suite.js](./tests/test_suite.js)) verifying security sanitization, filesystem integrity, and command pipelines. See [TESTING.md](./documentation/TESTING.md).
 • **Documentation**:
-  - See [README.md](file:///S:/Common/projects/Terminal/README.md), [COMMAND_REFERENCE.md](file:///S:/Common/projects/Terminal/documentation/COMMAND_REFERENCE.md), and [SECURITY.md](file:///S:/Common/projects/Terminal/documentation/SECURITY.md).
+  - See [README.md](./README.md), [COMMAND_REFERENCE.md](./documentation/COMMAND_REFERENCE.md), and [SECURITY.md](./documentation/SECURITY.md).
 
 ---
 

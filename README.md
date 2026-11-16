@@ -32,7 +32,7 @@
 
 ## 🛠️ Quick Start
 
-Launch [index.html](file:///S:/Common/projects/Terminal/index.html) in any browser, or run a local server:
+Launch [index.html](./index.html) in any browser, or run a local server:
 
 ```bash
 # Using Python
@@ -84,10 +84,10 @@ node tests/run_all_tests.js
 
 ## 📜 Complete Documentation
 
-- OS Architecture Specification: [ARCHITECTURE.md](file:///S:/Common/projects/Terminal/documentation/ARCHITECTURE.md)
-- Native Language Specification (`.pf`): [LANGUAGE_SPECIFICATION.md](file:///S:/Common/projects/Terminal/documentation/LANGUAGE_SPECIFICATION.md)
-- Cybersecurity & Threat Model: [SECURITY.md](file:///S:/Common/projects/Terminal/documentation/SECURITY.md)
-- Command Reference: [COMMAND_REFERENCE.md](file:///S:/Common/projects/Terminal/documentation/COMMAND_REFERENCE.md)
-- Engineering Upgrade Audit: [UPGRADE_AUDIT.md](file:///S:/Common/projects/Terminal/documentation/UPGRADE_AUDIT.md)
-- Testing Methodology: [TESTING.md](file:///S:/Common/projects/Terminal/documentation/TESTING.md)
-- Changelog: [CHANGELOG.md](file:///S:/Common/projects/Terminal/CHANGELOG.md)
+- OS Architecture Specification: [ARCHITECTURE.md](./documentation/ARCHITECTURE.md)
+- Native Language Specification (`.pf`): [LANGUAGE_SPECIFICATION.md](./documentation/LANGUAGE_SPECIFICATION.md)
+- Cybersecurity & Threat Model: [SECURITY.md](./documentation/SECURITY.md)
+- Command Reference: [COMMAND_REFERENCE.md](./documentation/COMMAND_REFERENCE.md)
+- Engineering Upgrade Audit: [UPGRADE_AUDIT.md](./documentation/UPGRADE_AUDIT.md)
+- Testing Methodology: [TESTING.md](./documentation/TESTING.md)
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
