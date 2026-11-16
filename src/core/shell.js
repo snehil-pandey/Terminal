@@ -1,38 +1,49 @@
 /**
- * WebTerminal Shell Engine
- * Linux bash emulation, readline handling, command history, auto-completion, and piping.
+ * Panfam-Terminal Reconstructed Shell Engine
+ * Integrates:
+ * - POSIX Parser & Lexer (supporting pipes, redirections, logical ops: &&, ||, ;)
+ * - Execution Context & Command Registry
+ * - Output Virtualization & DOM Sanitization
+ * - Command History, Navigation & Tab Completion
  */
 
 (function (root, factory) {
     if (typeof module === 'object' && module.exports) {
         const Security = require('./security');
         const Storage = require('./storage');
+        const Parser = require('./parser');
         const VirtualFileSystem = require('../fs/vfs');
+        const VirtualNetwork = require('../net/network');
         const ThemeManager = require('../ui/theme');
         const CommandRegistry = require('../commands/registry');
-        module.exports = factory(Security, Storage, VirtualFileSystem, ThemeManager, CommandRegistry);
+        module.exports = factory(Security, Storage, Parser, VirtualFileSystem, VirtualNetwork, ThemeManager, CommandRegistry);
     } else {
         root.WebTerminalShell = factory(
             root.TerminalSecurity,
             root.TerminalStorage,
+            root.TerminalParser,
             root.VirtualFileSystem,
+            root.VirtualNetwork,
             root.TerminalTheme,
             root.TerminalCommands
         );
     }
-})(typeof self !== 'undefined' ? self : this, function (Security, Storage, VirtualFileSystem, ThemeManager, CommandRegistry) {
+})(typeof self !== 'undefined' ? self : this, function (Security, Storage, ParserModule, VirtualFileSystem, VirtualNetwork, ThemeManager, CommandRegistry) {
     'use strict';
 
-    const HISTORY_COOKIE_KEY = 'cmd_history';
-    const MAX_HISTORY = 100;
+    const HISTORY_KEY = 'cmd_history';
+    const MAX_HISTORY = 200;
 
     class WebTerminalShell {
         constructor(options = {}) {
             this.user = options.user || 'user';
             this.hostname = options.hostname || 'panfam-terminal';
             this.vfs = new VirtualFileSystem();
+            this.network = new VirtualNetwork();
             this.themeManager = new ThemeManager();
             this.commands = new CommandRegistry(this);
+            this.lastExitCode = 0;
+
             this.environment = {
                 'USER': this.user,
                 'HOME': '/home/user',
@@ -53,10 +64,10 @@
         }
 
         loadHistory() {
-            const saved = Storage ? Storage.getItem(HISTORY_COOKIE_KEY) : null;
+            const saved = Storage ? Storage.getItem(HISTORY_KEY) : null;
             if (saved) {
                 try {
-                    this.history = JSON.parse(saved);
+                    this.history = typeof saved === 'string' ? JSON.parse(saved) : saved;
                 } catch (e) {
                     this.history = [];
                 }
@@ -66,10 +77,8 @@
         saveHistory() {
             if (Storage) {
                 try {
-                    Storage.setItem(HISTORY_COOKIE_KEY, JSON.stringify(this.history.slice(-MAX_HISTORY)));
-                } catch (e) {
-                    console.warn('History save failed:', e);
-                }
+                    Storage.setItem(HISTORY_KEY, JSON.stringify(this.history.slice(-MAX_HISTORY)));
+                } catch (e) {}
             }
         }
 
@@ -78,6 +87,7 @@
         }
 
         getEnv(key) {
+            if (key === '?') return String(this.lastExitCode);
             return this.environment[key] || '';
         }
 
@@ -88,16 +98,6 @@
             }
         }
 
-        /**
-         * Formats prompt with current user, host, and path (like bash PS1: [user@box:~/dir]$)
-         */
-        getPromptText() {
-            const displayPath = this.vfs.cwd.startsWith('/home/user')
-                ? '~' + this.vfs.cwd.slice('/home/user'.length)
-                : this.vfs.cwd;
-            return `[${this.user}@${this.hostname}:${displayPath || '/'}]# `;
-        }
-
         getPromptHtml() {
             const displayPath = this.vfs.cwd.startsWith('/home/user')
                 ? '~' + this.vfs.cwd.slice('/home/user'.length)
@@ -105,27 +105,19 @@
             return `<c>[${Security.escapeHtml(this.user)}@${Security.escapeHtml(this.hostname)}</c>:<y>${Security.escapeHtml(displayPath || '/')}</y>]<g>$</g> `;
         }
 
-        /**
-         * Mount shell to DOM
-         */
         mount(outputEl, inputEl) {
             this.outputContainer = outputEl;
             this.inputElement = inputEl;
 
-            // Apply active theme
             this.themeManager.apply(this.themeManager.current);
-
-            // Banner
             this.printBanner();
-
-            // Setup input listener
             this.setupEventListeners();
         }
 
         printBanner() {
-            let banner = '<c>Linux panfam-terminal 6.5.0-35-generic x86_64 WebLinux LTS</c>\n';
-            banner += '<w>All system actions, cookies &amp; filesystem are active and injection-hardened.</w>\n';
-            banner += '<w>Type <g>help</g> or <g>list</g> to see commands, or <g>theme list</g> to customize.</w>\n';
+            let banner = '<c>Linux panfam-terminal 6.5.0-35-generic x86_64 Panfam Linux LTS</c>\n';
+            banner += '<w>POSIX-compliant shell AST, persistent VFS &amp; 7 visual themes enabled.</w>\n';
+            banner += '<w>Type <g>help</g> or <g>list</g> for commands, or <g>theme list</g> to customize.</w>\n';
             this.appendHtml(banner);
         }
 
@@ -179,7 +171,6 @@
             const currentToken = parts[parts.length - 1];
 
             if (parts.length === 1) {
-                // Command completion
                 const matches = this.commands.list()
                     .map(c => c.name)
                     .filter(name => name.startsWith(currentToken.toLowerCase()));
@@ -189,7 +180,6 @@
                     this.appendHtml(`\n<w>${matches.join('    ')}</w>\n`);
                 }
             } else {
-                // Path completion
                 try {
                     let dirPath = '.';
                     let filePrefix = currentToken;
@@ -210,9 +200,7 @@
                     } else if (matches.length > 1) {
                         this.appendHtml(`\n<w>${matches.join('    ')}</w>\n`);
                     }
-                } catch (e) {
-                    // Ignore path lookup errors during tab
-                }
+                } catch (e) {}
             }
         }
 
@@ -225,7 +213,6 @@
                 return;
             }
 
-            // Save history
             if (this.history[this.history.length - 1] !== cleanLine) {
                 this.history.push(cleanLine);
                 if (this.history.length > MAX_HISTORY) this.history.shift();
@@ -235,111 +222,122 @@
 
             this.appendHtml(prompt + Security.escapeHtml(cleanLine) + '\n');
 
-            // Support semicolons (e.g. `mkdir test; cd test; ls`)
-            const statements = cleanLine.split(';').map(s => s.trim()).filter(Boolean);
-
-            for (const stmt of statements) {
-                await this.executeSingleStatement(stmt);
+            try {
+                const ast = ParserModule.parseInput(cleanLine);
+                if (ast) {
+                    const result = await this.executeAstNode(ast);
+                    this.lastExitCode = result ? result.exitCode : 0;
+                }
+            } catch (err) {
+                this.appendHtml(`<o>bash: syntax error: ${Security.escapeHtml(err.message)}</o>\n`);
+                this.lastExitCode = 2;
             }
         }
 
-        async executeSingleStatement(statement) {
-            // Check for output redirection `>` or `>>`
-            let redirectFile = null;
-            let appendMode = false;
-            let cmdSegment = statement;
+        async executeAstNode(node, stdin = null) {
+            if (!node) return { exitCode: 0, stdout: '', stderr: '' };
 
-            if (statement.includes('>>')) {
-                const parts = statement.split('>>');
-                cmdSegment = parts[0].trim();
-                redirectFile = parts[1].trim();
-                appendMode = true;
-            } else if (statement.includes('>')) {
-                const parts = statement.split('>');
-                cmdSegment = parts[0].trim();
-                redirectFile = parts[1].trim();
-                appendMode = false;
+            if (node.type === 'BinaryOp') {
+                if (node.op === ';') {
+                    await this.executeAstNode(node.left);
+                    return await this.executeAstNode(node.right);
+                } else if (node.op === '&&') {
+                    const leftRes = await this.executeAstNode(node.left);
+                    if (leftRes.exitCode === 0 && node.right) {
+                        return await this.executeAstNode(node.right);
+                    }
+                    return leftRes;
+                } else if (node.op === '||') {
+                    const leftRes = await this.executeAstNode(node.left);
+                    if (leftRes.exitCode !== 0 && node.right) {
+                        return await this.executeAstNode(node.right);
+                    }
+                    return leftRes;
+                }
+            } else if (node.type === 'Pipeline') {
+                let currentInput = stdin;
+                let lastResult = null;
+                for (let i = 0; i < node.commands.length; i++) {
+                    const cmdNode = node.commands[i];
+                    lastResult = await this.executeCommandNode(cmdNode, currentInput, i === node.commands.length - 1);
+                    currentInput = lastResult ? lastResult.stdout : '';
+                }
+                return lastResult;
+            } else if (node.type === 'Command') {
+                return await this.executeCommandNode(node, stdin, true);
             }
 
-            // Support pipes: cmd1 | cmd2 | cmd3
-            const pipeSegments = cmdSegment.split('|').map(s => s.trim()).filter(Boolean);
-            let pipeData = null;
-
-            for (let i = 0; i < pipeSegments.length; i++) {
-                const segment = pipeSegments[i];
-                const tokens = this.tokenize(segment);
-                if (tokens.length === 0) continue;
-
-                const cmdName = tokens[0].toLowerCase();
-                const args = tokens.slice(1);
-
-                const cmd = this.commands.get(cmdName);
-                if (!cmd) {
-                    this.appendHtml(`<o>bash: ${Security.escapeHtml(cmdName)}: command not found</o>\n`);
-                    return;
-                }
-
-                try {
-                    // Pass pipeData as second argument (stdin)
-                    const output = await cmd.handler(args, pipeData);
-                    // Pass output to next command in pipeline, strip HTML formatting for downstream stdin
-                    if (output !== null && output !== undefined) {
-                        pipeData = String(output).replace(/<[^>]*>?/gm, '');
-                    } else {
-                        pipeData = '';
-                    }
-
-                    // If this is the final command in pipeline
-                    if (i === pipeSegments.length - 1) {
-                        if (output !== null && output !== undefined && output !== '') {
-                            if (redirectFile) {
-                                const plainText = output.replace(/<[^>]*>?/gm, '');
-                                let existing = '';
-                                if (appendMode && this.vfs.exists(redirectFile)) {
-                                    existing = this.vfs.readFile(redirectFile);
-                                    if (existing && !existing.endsWith('\n')) existing += '\n';
-                                }
-                                this.vfs.writeFile(redirectFile, existing + plainText, this.user);
-                            } else {
-                                this.appendHtml(output + '\n');
-                            }
-                        }
-                    }
-                } catch (err) {
-                    this.appendHtml(`<o>Error executing ${Security.escapeHtml(cmdName)}: ${Security.escapeHtml(err.message)}</o>\n`);
-                    return;
-                }
-            }
+            return { exitCode: 0, stdout: '', stderr: '' };
         }
 
-        /**
-         * Safely tokenize command arguments while preserving quotes and avoiding injections
-         */
-        tokenize(input) {
-            const tokens = [];
-            let current = '';
-            let inQuotes = false;
-            let quoteChar = '';
+        async executeCommandNode(cmdNode, stdin = null, isFinalInPipeline = true) {
+            if (!cmdNode || cmdNode.args.length === 0) return { exitCode: 0, stdout: '', stderr: '' };
 
-            for (let i = 0; i < input.length; i++) {
-                const c = input[i];
-                if ((c === '"' || c === "'") && !inQuotes) {
-                    inQuotes = true;
-                    quoteChar = c;
-                } else if (c === quoteChar && inQuotes) {
-                    inQuotes = false;
-                    quoteChar = '';
-                } else if (/\s/.test(c) && !inQuotes) {
-                    if (current) {
-                        tokens.push(current);
-                        current = '';
+            const cmdName = cmdNode.args[0].toLowerCase();
+            const args = cmdNode.args.slice(1);
+
+            // Handle input redirection (< file)
+            let effectiveStdin = stdin;
+            for (const r of cmdNode.redirections) {
+                if (r.type === '<' && r.target) {
+                    try {
+                        effectiveStdin = this.vfs.readFile(r.target);
+                    } catch (e) {
+                        this.appendHtml(`<o>bash: ${Security.escapeHtml(r.target)}: No such file or directory</o>\n`);
+                        return { exitCode: 1, stdout: '', stderr: e.message };
                     }
-                } else {
-                    current += c;
                 }
             }
-            if (current) tokens.push(current);
-            return tokens;
+
+            const cmd = this.commands.get(cmdName);
+            if (!cmd) {
+                this.appendHtml(`<o>bash: ${Security.escapeHtml(cmdName)}: command not found</o>\n`);
+                return { exitCode: 127, stdout: '', stderr: 'command not found' };
+            }
+
+            const ctx = {
+                shell: this,
+                vfs: this.vfs,
+                network: this.network,
+                user: this.user,
+                hostname: this.hostname
+            };
+
+            try {
+                const res = await cmd.handler(args, effectiveStdin, ctx);
+                const stdout = res ? (res.stdout || '') : '';
+                const stderr = res ? (res.stderr || '') : '';
+                const exitCode = res ? (res.exitCode !== undefined ? res.exitCode : 0) : 0;
+
+                // Handle output redirection (>, >>, 2>)
+                let hasStdoutRedir = false;
+                for (const r of cmdNode.redirections) {
+                    if (r.type === '>' && r.target) {
+                        this.vfs.writeFile(r.target, stdout, this.user);
+                        hasStdoutRedir = true;
+                    } else if (r.type === '>>' && r.target) {
+                        let existing = '';
+                        if (this.vfs.exists(r.target)) existing = this.vfs.readFile(r.target);
+                        this.vfs.writeFile(r.target, existing + stdout, this.user);
+                        hasStdoutRedir = true;
+                    } else if (r.type === '2>' && r.target) {
+                        this.vfs.writeFile(r.target, stderr, this.user);
+                    }
+                }
+
+                if (stderr) {
+                    this.appendHtml(`<o>${Security.escapeHtml(stderr)}</o>\n`);
+                }
+
+                if (isFinalInPipeline && !hasStdoutRedir && stdout) {
+                    this.appendHtml(`<w>${Security.escapeHtml(stdout)}</w>\n`);
+                }
+
+                return { exitCode, stdout, stderr };
+            } catch (err) {
+                this.appendHtml(`<o>Error executing ${Security.escapeHtml(cmdName)}: ${Security.escapeHtml(err.message)}</o>\n`);
+                return { exitCode: 1, stdout: '', stderr: err.message };
+            }
         }
 
         appendHtml(html) {
@@ -348,16 +346,17 @@
             span.innerHTML = html.replace(/\n/g, '<br>');
             this.outputContainer.appendChild(span);
 
-            // Keep the active input prompt positioned comfortably in the upper half of the viewport
-            if (this.inputElement) {
+            if (this.inputElement && typeof window !== 'undefined') {
                 const inputLine = document.getElementById('input-line') || this.inputElement;
-                const rect = inputLine.getBoundingClientRect();
-                const targetY = window.innerHeight * 0.42; // Stay around 40-45% from top
-                const scrollOffset = rect.top + window.scrollY - targetY;
-                window.scrollTo({
-                    top: Math.max(0, scrollOffset),
-                    behavior: 'smooth'
-                });
+                if (inputLine.getBoundingClientRect) {
+                    const rect = inputLine.getBoundingClientRect();
+                    const targetY = window.innerHeight * 0.42;
+                    const scrollOffset = rect.top + window.scrollY - targetY;
+                    window.scrollTo({
+                        top: Math.max(0, scrollOffset),
+                        behavior: 'smooth'
+                    });
+                }
             }
         }
 

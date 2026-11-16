@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Peak Cybersecurity: Strict Content Security Policy preventing unauthorized script injections -->
+    <!-- Peak Cybersecurity: Content Security Policy enforcing strict script origins & injection protection -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:;">
-    <meta name="description" content="WebLinux Terminal - Authentic Streamlined Linux CLI Interface">
-    <title>WebLinux CLI Terminal</title>
+    <meta name="description" content="Panfam-Terminal - High-Performance Linux CLI Emulator in Pure JavaScript">
+    <title>Panfam-Terminal</title>
     <link rel="stylesheet" href="terminal.css">
 </head>
 <body>
     <canvas id="matrix-canvas"></canvas>
 
     <div id="content">
-        <!-- Command history & output stream -->
+        <!-- Live Terminal Stream Output -->
         <p id="out"></p>
-        <!-- Inline input prompt: type command, press Enter, output appears immediately below it -->
+        <!-- Active Command Input Prompt -->
         <div id="input-line">
             <span id="prompt-label"></span>
             <input 
@@ -34,11 +34,21 @@
     <!-- Core Modular Architecture Scripts -->
     <script src="src/core/security.js"></script>
     <script src="src/core/storage.js"></script>
+    <script src="src/core/lexer.js"></script>
+    <script src="src/core/parser.js"></script>
     <script src="src/fs/vfs.js"></script>
+    <script src="src/net/network.js"></script>
     <script src="src/ui/theme.js"></script>
+    <!-- Modular Command Domain Scripts -->
+    <script src="src/commands/result.js"></script>
+    <script src="src/commands/fs_commands.js"></script>
+    <script src="src/commands/text_commands.js"></script>
+    <script src="src/commands/sys_commands.js"></script>
+    <script src="src/commands/net_commands.js"></script>
+    <script src="src/commands/dev_commands.js"></script>
     <script src="src/commands/registry.js"></script>
+    <!-- Shell & Entrypoint Controllers -->
     <script src="src/core/shell.js"></script>
-    <!-- Entrypoint Controller -->
     <script src="terminal.js"></script>
 </body>
 </html>

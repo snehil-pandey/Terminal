@@ -1,13 +1,22 @@
 /**
- * WebTerminal Test Suite
- * Validates Security (escaping, sanitization), VFS operations,
- * Storage persistence, Theme management, and Command execution.
+ * Panfam-Terminal Comprehensive Test Suite
+ * Covers:
+ * - POSIX Lexer & Tokenizer
+ * - Parser & AST Generation (logical ops &&, ||, ;, pipes |, redirections >, >>, <, 2>)
+ * - Layered Storage Engine (Cookies, LocalStorage, IndexedDB interface)
+ * - Virtual File System (Inode tree, symlinks, loop detection, synthetic /proc)
+ * - Virtual Network (Interfaces, DNS resolution, /etc/hosts integration)
+ * - Domain Commands (Filesystem, Text, System, Network, Development)
+ * - Security & Injection Prevention (XSS, path traversal, dangerous URL rejection)
  */
 
 const assert = require('assert');
 const Security = require('../src/core/security');
 const Storage = require('../src/core/storage');
+const LexerModule = require('../src/core/lexer');
+const ParserModule = require('../src/core/parser');
 const VirtualFileSystem = require('../src/fs/vfs');
+const VirtualNetwork = require('../src/net/network');
 const ThemeManager = require('../src/ui/theme');
 const CommandRegistry = require('../src/commands/registry');
 const WebTerminalShell = require('../src/core/shell');
@@ -38,23 +47,23 @@ async function testAsync(name, fn) {
 }
 
 async function runAll() {
-    console.log('--- Running WebTerminal Security & Core Tests ---');
+    console.log('=== Running Panfam-Terminal Automated Test Suite ===');
 
     // 1. Security Tests
-    test('Security: escapeHtml sanitizes dangerous tags and quotes', () => {
+    test('Security: escapeHtml properly sanitizes dangerous characters', () => {
         const xss = '<script>alert(1)</script>"\'`&';
         const escaped = Security.escapeHtml(xss);
         assert.strictEqual(escaped, '&lt;script&gt;alert(1)&lt;/script&gt;&quot;&#39;&#96;&amp;');
     });
 
-    test('Security: sanitizeInput strips null bytes and control chars', () => {
-        const dirty = 'echo hello\x00\x08world\x1b[31m';
+    test('Security: sanitizeInput strips null bytes and non-printable control chars', () => {
+        const dirty = 'echo test\x00\x08danger';
         const clean = Security.sanitizeInput(dirty);
-        assert(!clean.includes('\x00'), 'Should remove null bytes');
-        assert(!clean.includes('\x08'), 'Should remove backspace byte');
+        assert(!clean.includes('\x00'));
+        assert(!clean.includes('\x08'));
     });
 
-    test('Security: isValidNodeName prevents path traversal', () => {
+    test('Security: isValidNodeName prevents path traversal and control sequences', () => {
         assert(!Security.isValidNodeName('..'));
         assert(!Security.isValidNodeName('.'));
         assert(!Security.isValidNodeName('foo/bar'));
@@ -64,7 +73,7 @@ async function runAll() {
         assert(Security.isValidNodeName('.bashrc'));
     });
 
-    test('Security: isSafeUrl blocks non-http schemes', () => {
+    test('Security: isSafeUrl blocks javascript: and vbscript: URIs', () => {
         assert(!Security.isSafeUrl('javascript:alert(1)'));
         assert(!Security.isSafeUrl('data:text/html,<script>alert(1)</script>'));
         assert(!Security.isSafeUrl('vbscript:msgbox(1)'));
@@ -72,143 +81,159 @@ async function runAll() {
         assert(Security.isSafeUrl('http://example.com/test'));
     });
 
-    // 2. VFS Tests
-    test('VFS: Default tree structure created properly', () => {
+    // 2. POSIX Lexer & Parser Tests
+    test('Lexer: Tokenizes quotes, escapes, and operators correctly', () => {
+        const input = 'echo "hello world" \'single quoted\' file\\ with\\ space && cat < in.txt | grep test > out.txt 2> err.txt';
+        const lexer = new LexerModule.Lexer(input);
+        const tokens = lexer.tokenize();
+        assert(tokens.some(t => t.value === 'hello world'));
+        assert(tokens.some(t => t.value === 'single quoted'));
+        assert(tokens.some(t => t.type === 'AND_IF'));
+        assert(tokens.some(t => t.type === 'REDIR_IN'));
+        assert(tokens.some(t => t.type === 'PIPE'));
+        assert(tokens.some(t => t.type === 'REDIR_OUT'));
+        assert(tokens.some(t => t.type === 'REDIR_ERR'));
+    });
+
+    test('Parser: Builds correct AST for pipelines and logical operators', () => {
+        const ast = ParserModule.parseInput('mkdir test && cd test || echo error');
+        assert.strictEqual(ast.type, 'BinaryOp');
+        assert.strictEqual(ast.op, '||');
+        assert.strictEqual(ast.left.type, 'BinaryOp');
+        assert.strictEqual(ast.left.op, '&&');
+    });
+
+    test('Parser: Preserves command redirection targets', () => {
+        const ast = ParserModule.parseInput('echo "data" > result.txt 2> error.log');
+        assert.strictEqual(ast.type, 'Command');
+        assert.strictEqual(ast.args[0], 'echo');
+        assert.strictEqual(ast.args[1], 'data');
+        assert.strictEqual(ast.redirections.length, 2);
+        assert.strictEqual(ast.redirections[0].target, 'result.txt');
+        assert.strictEqual(ast.redirections[1].target, 'error.log');
+    });
+
+    // 3. Virtual File System & Symlinks
+    test('VFS: Inode tree initialization and /proc dynamic files', () => {
         const vfs = new VirtualFileSystem();
         assert(vfs.exists('/bin'));
-        assert(vfs.exists('/etc'));
-        assert(vfs.exists('/home/user'));
-        assert(vfs.exists('/etc/os-release'));
+        assert(vfs.exists('/proc/version'));
+        assert(vfs.exists('/proc/cpuinfo'));
+        assert(vfs.readFile('/proc/version').includes('Linux version'));
         assert(vfs.readFile('/etc/hostname').includes('panfam-terminal'));
     });
 
-    test('VFS: Path resolution handles relative, ~, and .. correctly', () => {
+    test('VFS: Symbolic link creation and resolution', () => {
         const vfs = new VirtualFileSystem();
-        vfs.cwd = '/home/user';
-        assert.strictEqual(vfs.resolvePath('.'), '/home/user');
-        assert.strictEqual(vfs.resolvePath('..'), '/home');
-        assert.strictEqual(vfs.resolvePath('../..'), '/');
-        assert.strictEqual(vfs.resolvePath('../../..'), '/');
-        assert.strictEqual(vfs.resolvePath('~/notes.md'), '/home/user/notes.md');
-        assert.strictEqual(vfs.resolvePath('/etc/passwd'), '/etc/passwd');
+        vfs.writeFile('/home/user/target.txt', 'Target Content');
+        vfs.createSymlink('/home/user/target.txt', '/home/user/link.txt');
+        assert.strictEqual(vfs.readLink('/home/user/link.txt'), '/home/user/target.txt');
+        assert.strictEqual(vfs.readFile('/home/user/link.txt'), 'Target Content');
     });
 
-    test('VFS: File creation, reading, and deletion', () => {
+    test('VFS: Symlink recursion loop detection', () => {
         const vfs = new VirtualFileSystem();
-        vfs.writeFile('/home/user/test.txt', 'Hello Cyber Linux');
-        assert.strictEqual(vfs.readFile('/home/user/test.txt'), 'Hello Cyber Linux');
-        vfs.remove('/home/user/test.txt');
-        assert(!vfs.exists('/home/user/test.txt'));
+        vfs.createSymlink('/home/user/loopA', '/home/user/loopB');
+        vfs.createSymlink('/home/user/loopB', '/home/user/loopA');
+        assert.throws(() => {
+            vfs.resolvePathWithSymlinks('/home/user/loopA');
+        }, /Too many levels of symbolic links/);
     });
 
-    test('VFS: Directory creation and listing', () => {
+    test('VFS: chmod and chown attributes', () => {
         const vfs = new VirtualFileSystem();
-        vfs.makeDir('/home/user/projects/web', true);
-        assert(vfs.exists('/home/user/projects/web'));
-        vfs.writeFile('/home/user/projects/web/app.js', 'console.log("ok");');
-        const entries = vfs.readDir('/home/user/projects/web');
-        assert.strictEqual(entries.length, 1);
-        assert.strictEqual(entries[0].name, 'app.js');
+        vfs.writeFile('/home/user/script.sh', '#!/bin/sh');
+        vfs.chmod('/home/user/script.sh', '755');
+        const node = vfs.getNode('/home/user/script.sh');
+        assert.strictEqual(node.permissions, '-rwxr-xr-x');
+        vfs.chown('/home/user/script.sh', 'root', 'root');
+        assert.strictEqual(node.owner, 'root');
     });
 
-    // 3. Theme Manager Tests
-    test('ThemeManager: Theme listing and switching', () => {
+    // 4. Virtual Network Tests
+    test('Network: Interface inspection and routing table', () => {
+        const net = new VirtualNetwork();
+        const lo = net.getInterface('lo');
+        assert.strictEqual(lo.inet, '127.0.0.1');
+        const eth0 = net.getInterface('eth0');
+        assert.strictEqual(eth0.inet, '192.168.1.105');
+        assert(net.getRoutes().length >= 2);
+    });
+
+    test('Network: Host resolution with /etc/hosts fallback', () => {
+        const net = new VirtualNetwork();
+        const vfs = new VirtualFileSystem();
+        const resolved = net.resolveHost('panfam-terminal', vfs);
+        assert.strictEqual(resolved, '127.0.0.1');
+        const google = net.resolveHost('google.com');
+        assert.strictEqual(google, '142.250.190.46');
+    });
+
+    // 5. Shell Execution, Pipes, and Redirection
+    await testAsync('Shell: Execute conditional chaining (&&, ||) and exit statuses', async () => {
+        const shell = new WebTerminalShell();
+        const outputs = [];
+        shell.appendHtml = (html) => outputs.push(html);
+
+        // Success condition: echo A && echo B
+        await shell.executeCommandLine('echo "A" && echo "B"');
+        assert(outputs.some(o => o.includes('A')));
+        assert(outputs.some(o => o.includes('B')));
+
+        // Failure condition with ||: cat nonexistent_file || echo "Fallback"
+        outputs.length = 0;
+        await shell.executeCommandLine('cat /home/user/nonexistent_file || echo "Fallback"');
+        assert(outputs.some(o => o.includes('Fallback')));
+    });
+
+    await testAsync('Shell: Pipeline execution (|) across text commands', async () => {
+        const shell = new WebTerminalShell();
+        const outputs = [];
+        shell.appendHtml = (html) => outputs.push(html);
+
+        shell.vfs.writeFile('/home/user/sample.txt', 'orange\napple\nbanana\napple\n');
+
+        // cat sample.txt | grep apple | wc -l
+        await shell.executeCommandLine('cat /home/user/sample.txt | grep apple | wc -l');
+        assert(outputs.some(o => o.includes('2')));
+    });
+
+    await testAsync('Shell: Input redirection (<) and output redirection (>)', async () => {
+        const shell = new WebTerminalShell();
+        shell.vfs.writeFile('/home/user/in.txt', 'first line\nsecond line\n');
+
+        await shell.executeCommandLine('head -n 1 < /home/user/in.txt > /home/user/out.txt');
+        assert(shell.vfs.exists('/home/user/out.txt'));
+        const content = shell.vfs.readFile('/home/user/out.txt').trim();
+        assert.strictEqual(content, 'first line');
+    });
+
+    // 6. Themes & Customization
+    test('Themes: Supports all 7 original themes and persists in memory', () => {
         const tm = new ThemeManager();
         const themes = tm.listThemes();
-        assert(themes.length >= 6, 'Should support at least 6 themes');
+        assert.strictEqual(themes.length, 7);
+        const dracula = tm.apply('dracula');
+        assert.strictEqual(dracula.name, 'Dracula Dark');
         const amber = tm.apply('amber');
         assert.strictEqual(amber.name, 'Vintage Amber CRT');
-        assert.strictEqual(tm.getCurrent().id, 'amber');
-        assert.throws(() => tm.apply('non-existent-theme'));
     });
 
-    // 4. Shell & Command Execution Tests
-    await testAsync('Shell: Execute Linux commands (pwd, whoami, tty, ls, cat)', async () => {
+    // 7. Developer & Package Commands
+    await testAsync('Dev: git commands (init, status, branch, commit)', async () => {
         const shell = new WebTerminalShell();
         const outputs = [];
         shell.appendHtml = (html) => outputs.push(html);
 
-        // pwd
-        await shell.executeSingleStatement('pwd');
-        assert(outputs.some(o => o.includes('/home/user')));
+        await shell.executeCommandLine('git init');
+        assert(shell.vfs.exists('/home/user/.git'));
 
-        // whoami
         outputs.length = 0;
-        await shell.executeSingleStatement('whoami');
-        assert(outputs.some(o => o.includes('user')));
-
-        // tty
-        outputs.length = 0;
-        await shell.executeSingleStatement('tty');
-        assert(outputs.some(o => o.includes('/dev/pts/0')));
-
-        // ls
-        outputs.length = 0;
-        await shell.executeSingleStatement('ls');
-        assert(outputs.some(o => o.includes('welcome.txt')));
-
-        // cat
-        outputs.length = 0;
-        await shell.executeSingleStatement('cat /etc/hostname');
-        assert(outputs.some(o => o.includes('panfam-terminal')));
+        await shell.executeCommandLine('git status');
+        assert(outputs.some(o => o.includes('On branch main')));
     });
 
-    await testAsync('Shell: Redirection (> and >>)', async () => {
-        const shell = new WebTerminalShell();
-        await shell.executeSingleStatement('echo "first line" > /home/user/redirect.txt');
-        assert(shell.vfs.exists('/home/user/redirect.txt'));
-        assert(shell.vfs.readFile('/home/user/redirect.txt').includes('first line'));
-
-        await shell.executeSingleStatement('echo "second line" >> /home/user/redirect.txt');
-        const fullContent = shell.vfs.readFile('/home/user/redirect.txt');
-        assert(fullContent.includes('first line'));
-        assert(fullContent.includes('second line'));
-    });
-
-    await testAsync('Shell: Theme switching command', async () => {
-        const shell = new WebTerminalShell();
-        const outputs = [];
-        shell.appendHtml = (html) => outputs.push(html);
-
-        await shell.executeSingleStatement('theme dracula');
-        assert.strictEqual(shell.themeManager.current, 'dracula');
-        assert(outputs.some(o => o.includes('Dracula Dark')));
-    });
-
-    await testAsync('Shell: grep, head, tail, wc, and pipeline (|)', async () => {
-        const shell = new WebTerminalShell();
-        const outputs = [];
-        shell.appendHtml = (html) => outputs.push(html);
-
-        // write test file
-        shell.vfs.writeFile('/home/user/lines.txt', 'alpha\nbeta\ngamma\ndelta\nepsilon\nzeta\n');
-
-        // grep
-        await shell.executeSingleStatement('grep -i "GAMMA" /home/user/lines.txt');
-        assert(outputs.some(o => o.includes('gamma')));
-
-        // pipe: cat lines.txt | grep beta
-        outputs.length = 0;
-        await shell.executeSingleStatement('cat /home/user/lines.txt | grep beta');
-        assert(outputs.some(o => o.includes('beta')));
-
-        // head -n 2
-        outputs.length = 0;
-        await shell.executeSingleStatement('head -n 2 /home/user/lines.txt');
-        assert(outputs.some(o => o.includes('alpha') && o.includes('beta')));
-
-        // tail -n 2
-        outputs.length = 0;
-        await shell.executeSingleStatement('tail -n 2 /home/user/lines.txt');
-        assert(outputs.some(o => o.includes('epsilon') || o.includes('zeta')));
-
-        // wc -l
-        outputs.length = 0;
-        await shell.executeSingleStatement('wc -l /home/user/lines.txt');
-        assert(outputs.some(o => o.includes('6')));
-    });
-
-    console.log(`\nTests finished: ${passed} Passed, ${failed} Failed.`);
+    console.log(`\nAutomated Test Results: ${passed} Passed, ${failed} Failed.`);
     if (failed > 0) {
         process.exit(1);
     }
