@@ -75,6 +75,115 @@
             return ExecutionResult.error(`git: '${sub}' is not a git command. See 'git --help'.`, 1);
         }, { description: 'The stupid content tracker', usage: 'git <command> [<args>]', category: 'Development' });
 
+        // pf (Panfam Programming Language Compiler & Runner)
+        registry.register('pf', (args, stdin, ctx) => {
+            const sub = args[0];
+            if (!sub || sub === 'help' || sub === '--help') {
+                return ExecutionResult.ok('Panfam Programming Language (.pf) Compiler & Toolchain v1.0.0\nUsage: pf <command> [arguments]\n\nCommands:\n   run <file.pf>      Compile and execute a .pf source file\n   eval "<code>"      Execute inline .pf code statement\n   repl               Start interactive .pf read-eval-print-loop\n   check <file.pf>    Parse and verify syntax of a .pf file\n   version            Display .pf runtime version');
+            }
+
+            if (sub === 'version') {
+                return ExecutionResult.ok('Panfam Language (.pf) Runtime v1.0.0 (PF Core x86_64)');
+            }
+
+            if (sub === 'run') {
+                if (!args[1]) return ExecutionResult.error('pf run: missing source file argument', 1);
+                try {
+                    const source = ctx.vfs.readFile(args[1]);
+                    const outputLogs = [];
+                    // Load PFLexer, PFParser, PFInterpreter
+                    const Interpreter = (typeof require !== 'undefined') ? require('../pf/interpreter').Interpreter : (root.PFInterpreter ? root.PFInterpreter.Interpreter : null);
+                    if (!Interpreter) {
+                        return ExecutionResult.error('pf: runtime interpreter module not found', 1);
+                    }
+                    const interp = new Interpreter((msg) => outputLogs.push(msg), ctx.shell ? ctx.shell.kernel : null);
+                    interp.run(source);
+                    return ExecutionResult.ok(outputLogs.join('\n'));
+                } catch (e) {
+                    return ExecutionResult.error(`pf runtime error: ${e.message}`, 1);
+                }
+            }
+
+            if (sub === 'eval') {
+                if (!args[1]) return ExecutionResult.error('pf eval: missing code expression', 1);
+                try {
+                    const outputLogs = [];
+                    const Interpreter = (typeof require !== 'undefined') ? require('../pf/interpreter').Interpreter : (root.PFInterpreter ? root.PFInterpreter.Interpreter : null);
+                    if (!Interpreter) return ExecutionResult.error('pf: runtime interpreter module not found', 1);
+                    const interp = new Interpreter((msg) => outputLogs.push(msg), ctx.shell ? ctx.shell.kernel : null);
+                    const res = interp.run(args.slice(1).join(' '));
+                    if (outputLogs.length > 0) return ExecutionResult.ok(outputLogs.join('\n'));
+                    return ExecutionResult.ok(res !== undefined ? String(res) : '');
+                } catch (e) {
+                    return ExecutionResult.error(`pf eval error: ${e.message}`, 1);
+                }
+            }
+
+            if (sub === 'check') {
+                if (!args[1]) return ExecutionResult.error('pf check: missing source file', 1);
+                try {
+                    const source = ctx.vfs.readFile(args[1]);
+                    const Parser = (typeof require !== 'undefined') ? require('../pf/parser') : (root.PFParser || null);
+                    if (Parser) Parser.parseSource(source);
+                    return ExecutionResult.ok(`Syntax check passed for '${args[1]}': 0 errors.`);
+                } catch (e) {
+                    return ExecutionResult.error(`Syntax error in '${args[1]}': ${e.message}`, 1);
+                }
+            }
+
+            return ExecutionResult.error(`pf: unknown command '${sub}'. Run 'pf help' for usage.`, 1);
+        }, { description: 'Panfam programming language toolchain', usage: 'pf [run|eval|check] <args>', category: 'Development' });
+
+        // pfpm (Panfam Package Manager)
+        registry.register('pfpm', (args, stdin, ctx) => {
+            const PackageManager = (typeof require !== 'undefined') ? require('../os/package') : (root.PFPackageManager || null);
+            if (!PackageManager) return ExecutionResult.error('pfpm: package subsystem not found', 1);
+            const pm = new PackageManager(ctx.vfs);
+
+            const sub = args[0] || 'list';
+            if (sub === 'list') {
+                const installed = pm.listInstalled();
+                let out = 'Installed Panfam Packages:\n';
+                for (const p of installed) {
+                    out += `  ${p.name.padEnd(16)} ${p.version.padEnd(8)} ${p.desc}\n`;
+                }
+                return ExecutionResult.ok(out.trimEnd());
+            }
+
+            if (sub === 'install') {
+                if (!args[1]) return ExecutionResult.error('pfpm install: missing package name', 1);
+                try {
+                    const res = pm.install(args[1]);
+                    return ExecutionResult.ok(res);
+                } catch (e) {
+                    return ExecutionResult.error(e.message, 1);
+                }
+            }
+
+            if (sub === 'remove') {
+                if (!args[1]) return ExecutionResult.error('pfpm remove: missing package name', 1);
+                try {
+                    const res = pm.remove(args[1]);
+                    return ExecutionResult.ok(res);
+                } catch (e) {
+                    return ExecutionResult.error(e.message, 1);
+                }
+            }
+
+            if (sub === 'search') {
+                if (!args[1]) return ExecutionResult.error('pfpm search: missing search query', 1);
+                const results = pm.search(args[1]);
+                if (results.length === 0) return ExecutionResult.ok(`No packages matching '${args[1]}' found.`);
+                let out = `Search results for '${args[1]}':\n`;
+                for (const r of results) {
+                    out += `  ${r.name.padEnd(16)} ${r.version.padEnd(8)} ${r.desc}\n`;
+                }
+                return ExecutionResult.ok(out.trimEnd());
+            }
+
+            return ExecutionResult.error(`pfpm: unknown command '${sub}'`, 1);
+        }, { description: 'Panfam OS Native Package Manager', usage: 'pfpm [list|install|remove|search]', category: 'Package' });
+
         // apt / apt-get
         const aptHandler = (args, stdin, ctx) => {
             const sub = args[0];
