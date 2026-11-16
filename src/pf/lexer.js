@@ -16,6 +16,10 @@
     const TokenType = {
         // Keywords
         CLASS: 'CLASS',
+        EXTENDS: 'EXTENDS',
+        IMPLEMENTS: 'IMPLEMENTS',
+        INTERFACE: 'INTERFACE',
+        SUPER: 'SUPER',
         FUNCTION: 'FUNCTION',
         LET: 'LET',
         CONST: 'CONST',
@@ -28,6 +32,7 @@
         TRY: 'TRY',
         CATCH: 'CATCH',
         FINALLY: 'FINALLY',
+        THROW: 'THROW',
         IMPORT: 'IMPORT',
         ASYNC: 'ASYNC',
         AWAIT: 'AWAIT',
@@ -43,6 +48,8 @@
         TYPE_INT: 'TYPE_INT',
         TYPE_FLOAT: 'TYPE_FLOAT',
         TYPE_BOOL: 'TYPE_BOOL',
+        TYPE_ANY: 'TYPE_ANY',
+        TYPE_VOID: 'TYPE_VOID',
 
         // Literals & Identifiers
         IDENTIFIER: 'IDENTIFIER',
@@ -78,6 +85,10 @@
 
     const KEYWORDS = {
         'class': TokenType.CLASS,
+        'extends': TokenType.EXTENDS,
+        'implements': TokenType.IMPLEMENTS,
+        'interface': TokenType.INTERFACE,
+        'super': TokenType.SUPER,
         'function': TokenType.FUNCTION,
         'let': TokenType.LET,
         'const': TokenType.CONST,
@@ -90,6 +101,7 @@
         'try': TokenType.TRY,
         'catch': TokenType.CATCH,
         'finally': TokenType.FINALLY,
+        'throw': TokenType.THROW,
         'import': TokenType.IMPORT,
         'async': TokenType.ASYNC,
         'await': TokenType.AWAIT,
@@ -102,7 +114,9 @@
         'String': TokenType.TYPE_STRING,
         'Integer': TokenType.TYPE_INT,
         'Float': TokenType.TYPE_FLOAT,
-        'Boolean': TokenType.TYPE_BOOL
+        'Boolean': TokenType.TYPE_BOOL,
+        'Any': TokenType.TYPE_ANY,
+        'Void': TokenType.TYPE_VOID
     };
 
     class Token {

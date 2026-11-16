@@ -1,4 +1,4 @@
-# Panfam OS Architecture Specification (v4.0.0)
+# Panfam OS Architecture Specification (v4.1.0)
 
 **Project:** Panfam OS (PFOS)  
 **Codename:** Aether  
@@ -6,6 +6,7 @@
 **Shell:** PFSH (Panfam Shell)  
 **Native Language:** `.pf` (Panfam Language)  
 **Package Manager:** PFPM  
+**Related Documents:** [LANGUAGE_SPECIFICATION.md](./LANGUAGE_SPECIFICATION.md) | [SECURITY.md](./SECURITY.md) | [TESTING.md](./TESTING.md)
 
 ---
 
@@ -17,7 +18,7 @@
 |      (Terminal, PF Code Editor, File Manager, Process Monitor, Settings)|
 +-------------------------------------------------------------------------+
 |            Panfam Shell (PFSH) & .pf Language Toolchain / Runtime       |
-|            (PFLexer, PFParser, PFInterpreter, PFPM Package Manager)     |
+|            (PFLexer, PFParser, PFTypeChecker, PFInterpreter, PFPM)      |
 +-------------------------------------------------------------------------+
 |                    Panfam Kernel (Syscall & Security Layer)             |
 |   (process.spawn, fs.read, fs.write, meminfo, cpuinfo, Audit Logging)   |
@@ -60,30 +61,23 @@
 
 The `.pf` language combines clean, readable syntax with structured, object-oriented semantics:
 
-### 3.1 Syntax Overview
-```pf
-class Calculator {
-    init(name) {
-        self.name = name
-    }
-
-    function multiply(x, y) {
-        return x * y
-    }
-}
-
-let calc = Calculator("PanfamCalc")
-let res = calc.multiply(6, 7)
-print("Result is:", res)
-```
-
-### 3.2 Compiler & Interpreter Subsystems
-- **Lexer** ([`src/pf/lexer.js`](../src/pf/lexer.js)): Tokenizes keywords (`class`, `function`, `let`, `if`, `while`, `return`, `self`), symbols, and operators.
-- **Parser** ([`src/pf/parser.js`](../src/pf/parser.js)): Builds AST nodes (`ClassDecl`, `FuncDecl`, `VarDecl`, `IfStmt`, `WhileStmt`, `CallExpr`, `MemberExpr`, `AssignExpr`).
-- **Interpreter** ([`src/pf/interpreter.js`](../src/pf/interpreter.js)): Tree-walk virtual execution engine without `eval()` or `new Function()`. Includes standard library modules (`std.io`, `std.math`, `std.system`) and loop safety guards.
+### 3.1 Compiler & Interpreter Subsystems
+- **Lexer** ([`../src/pf/lexer.js`](../src/pf/lexer.js)): Tokenizes keywords (`class`, `extends`, `implements`, `interface`, `super`, `function`, `let`, `if`, `while`, `return`, `try`, `catch`, `finally`, `throw`), symbols, and types (`Integer`, `Float`, `String`, `Boolean`, `Any`, `Void`).
+- **Parser** ([`../src/pf/parser.js`](../src/pf/parser.js)): Builds AST nodes (`ClassDecl`, `InterfaceDecl`, `FuncDecl`, `VarDecl`, `IfStmt`, `WhileStmt`, `TryStmt`, `ThrowStmt`, `SuperExpr`, `CallExpr`, `MemberExpr`, `AssignExpr`).
+- **Static Type Checker** ([`../src/pf/typechecker.js`](../src/pf/typechecker.js)): Full compile-time static type analysis, assignment compatibility checks, class/interface hierarchy validation, and diagnostic error reports.
+- **Interpreter** ([`../src/pf/interpreter.js`](../src/pf/interpreter.js)): Tree-walk virtual execution engine without `eval()` or `new Function()`. Includes standard library modules (`std.io`, `std.math`, `std.string`, `std.collections`, `std.time`, `std.system`) and loop safety guards.
+- **Formatter** ([`../src/pf/formatter.js`](../src/pf/formatter.js)): AST-aware deterministic code formatter.
 
 ---
 
-## 4. Package Ecosystem (`src/os/package.js`)
+## 4. Desktop Window Manager (`src/desktop/wm.js`)
+- Full window lifecycle management (create, minimize, maximize, restore, close, drag, resize, z-index focus stack).
+- 4 Virtual Workspaces with instant hotkey or toolbar switching.
+- Integrated Top Bar with live system telemetry (vCPU, vMem, clock) and interactive dock with native applications (Terminal, PF Code Editor, File Manager, Task Monitor, Settings).
+- Seamless mode toggle between PFSH Terminal and Interactive Desktop (`desktop` command and `Ctrl+Alt+D` shortcut).
+
+---
+
+## 5. Package Ecosystem (`src/os/package.js`)
 - Native package manager (`pfpm`) supporting package metadata, dependency tracking, repository installation, removal, and search.
 - Pre-installed core packages: `coreutils`, `pfsh`, `pfruntime`.

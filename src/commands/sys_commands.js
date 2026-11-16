@@ -128,6 +128,22 @@
             await new Promise(r => setTimeout(r, seconds * 1000));
             return ExecutionResult.ok('');
         }, { description: 'Delay for a specified amount of time', usage: 'sleep <seconds>', category: 'System' });
+
+        // desktop / gui
+        const handleDesktop = (args, stdin, ctx) => {
+            if (typeof window !== 'undefined' && window.pfWM) {
+                const sub = args[0];
+                if (sub === 'off' || sub === 'stop' || sub === 'cli') {
+                    window.pfWM.toggleDesktop(false);
+                    return ExecutionResult.ok('Switched to Panfam Shell (PFSH) CLI mode.');
+                }
+                window.pfWM.toggleDesktop(true);
+                return ExecutionResult.ok('Launching Panfam OS Interactive Desktop Environment... (Press Ctrl+Alt+D or type "desktop off" to return)');
+            }
+            return ExecutionResult.ok('Panfam OS Desktop Environment initialized. In headless environment, desktop manager runs in virtual display :0.');
+        };
+        registry.register('desktop', handleDesktop, { description: 'Launch Panfam OS Interactive Desktop UI', usage: 'desktop [on|off]', category: 'System' });
+        registry.register('gui', handleDesktop, { description: 'Launch Panfam OS Interactive Desktop UI', usage: 'gui [on|off]', category: 'System' });
     }
 
     return { register: registerSysCommands };

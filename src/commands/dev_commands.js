@@ -75,15 +75,15 @@
             return ExecutionResult.error(`git: '${sub}' is not a git command. See 'git --help'.`, 1);
         }, { description: 'The stupid content tracker', usage: 'git <command> [<args>]', category: 'Development' });
 
-        // pf (Panfam Programming Language Compiler & Runner)
+        // pf (Panfam Programming Language Compiler & Toolchain)
         registry.register('pf', (args, stdin, ctx) => {
             const sub = args[0];
             if (!sub || sub === 'help' || sub === '--help') {
-                return ExecutionResult.ok('Panfam Programming Language (.pf) Compiler & Toolchain v1.0.0\nUsage: pf <command> [arguments]\n\nCommands:\n   run <file.pf>      Compile and execute a .pf source file\n   eval "<code>"      Execute inline .pf code statement\n   repl               Start interactive .pf read-eval-print-loop\n   check <file.pf>    Parse and verify syntax of a .pf file\n   version            Display .pf runtime version');
+                return ExecutionResult.ok('Panfam Programming Language (.pf) Compiler & Toolchain v2.0.0\nUsage: pf <command> [arguments]\n\nCommands:\n   run <file.pf>      Compile and execute a .pf source file\n   eval "<code>"      Execute inline .pf code statement\n   repl               Start interactive .pf read-eval-print-loop\n   check <file.pf>    Static type check and verify diagnostics\n   format <file.pf>   Format .pf source file with standard styling\n   version            Display .pf runtime version');
             }
 
             if (sub === 'version') {
-                return ExecutionResult.ok('Panfam Language (.pf) Runtime v1.0.0 (PF Core x86_64)');
+                return ExecutionResult.ok('Panfam Language (.pf) Runtime v2.0.0 (PF Core x86_64, Type Engine enabled)');
             }
 
             if (sub === 'run') {
@@ -91,7 +91,6 @@
                 try {
                     const source = ctx.vfs.readFile(args[1]);
                     const outputLogs = [];
-                    // Load PFLexer, PFParser, PFInterpreter
                     const Interpreter = (typeof require !== 'undefined') ? require('../pf/interpreter').Interpreter : (root.PFInterpreter ? root.PFInterpreter.Interpreter : null);
                     if (!Interpreter) {
                         return ExecutionResult.error('pf: runtime interpreter module not found', 1);
@@ -123,16 +122,43 @@
                 if (!args[1]) return ExecutionResult.error('pf check: missing source file', 1);
                 try {
                     const source = ctx.vfs.readFile(args[1]);
+                    const TypeChecker = (typeof require !== 'undefined') ? require('../pf/typechecker') : (root.PFTypeChecker || null);
+                    if (TypeChecker && typeof TypeChecker.check === 'function') {
+                        const result = TypeChecker.check(source, args[1]);
+                        if (!result.valid) {
+                            const errMsgs = result.diagnostics.map(d => d.toString()).join('\n');
+                            return ExecutionResult.error(`pf check: ${result.diagnostics.length} type diagnostic error(s):\n${errMsgs}`, 1);
+                        }
+                        return ExecutionResult.ok(`Type check passed for '${args[1]}': 0 errors. All types verified.`);
+                    }
                     const Parser = (typeof require !== 'undefined') ? require('../pf/parser') : (root.PFParser || null);
                     if (Parser) Parser.parseSource(source);
                     return ExecutionResult.ok(`Syntax check passed for '${args[1]}': 0 errors.`);
                 } catch (e) {
-                    return ExecutionResult.error(`Syntax error in '${args[1]}': ${e.message}`, 1);
+                    return ExecutionResult.error(`Syntax/Type error in '${args[1]}': ${e.message}`, 1);
                 }
             }
 
+            if (sub === 'format') {
+                if (!args[1]) return ExecutionResult.error('pf format: missing source file', 1);
+                try {
+                    const source = ctx.vfs.readFile(args[1]);
+                    const Formatter = (typeof require !== 'undefined') ? require('../pf/formatter') : (root.PFFormatter || null);
+                    if (!Formatter) return ExecutionResult.error('pf: formatter module not found', 1);
+                    const formatted = Formatter.format(source);
+                    ctx.vfs.writeFile(args[1], formatted, ctx.user);
+                    return ExecutionResult.ok(`Formatted '${args[1]}' successfully.`);
+                } catch (e) {
+                    return ExecutionResult.error(`pf format error: ${e.message}`, 1);
+                }
+            }
+
+            if (sub === 'repl') {
+                return ExecutionResult.ok('Panfam Language (.pf) Interactive REPL v2.0.0\nType .pf expressions or class/function definitions.\nType "exit" to return to shell.');
+            }
+
             return ExecutionResult.error(`pf: unknown command '${sub}'. Run 'pf help' for usage.`, 1);
-        }, { description: 'Panfam programming language toolchain', usage: 'pf [run|eval|check] <args>', category: 'Development' });
+        }, { description: 'Panfam programming language toolchain', usage: 'pf [run|eval|check|format|repl] <args>', category: 'Development' });
 
         // pfpm (Panfam Package Manager)
         registry.register('pfpm', (args, stdin, ctx) => {

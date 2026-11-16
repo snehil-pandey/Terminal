@@ -38,10 +38,18 @@
 
         // Keep input focused when clicking screen
         document.body.addEventListener('click', function (e) {
-            // Do not steal focus if user is selecting text
+            // Do not steal focus if desktop is active or user is selecting text
+            if (window.pfWM && window.pfWM.isDesktopActive) return;
+            if (e.target.closest('#pf-desktop-environment')) return;
             if (window.getSelection && window.getSelection().toString().length > 0) return;
             inputEl.focus();
         });
+
+        // Initialize Panfam OS Desktop Window Manager
+        if (window.PFWindowManager) {
+            window.pfWM = new window.PFWindowManager.WindowManager();
+            window.pfWM.init(document.body);
+        }
 
         window.termShell = shellInstance;
     }

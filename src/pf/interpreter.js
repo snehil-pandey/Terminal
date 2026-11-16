@@ -55,14 +55,25 @@
     }
 
     class PFClass {
-        constructor(name, methods = []) {
+        constructor(name, methods = [], superclass = null, interfaces = []) {
             this.name = name;
             this.methods = methods;
+            this.superclass = superclass; // PFClass instance or null
+            this.interfaces = interfaces;
+        }
+
+        findMethod(name) {
+            const method = this.methods.find(m => m.name === name);
+            if (method) return method;
+            if (this.superclass && typeof this.superclass.findMethod === 'function') {
+                return this.superclass.findMethod(name);
+            }
+            return undefined;
         }
 
         instantiate(args, interpreter) {
             const instance = new PFInstance(this);
-            const initMethod = this.methods.find(m => m.name === 'init');
+            const initMethod = this.findMethod('init');
             if (initMethod) {
                 const methodEnv = new Environment(interpreter.globalEnv);
                 methodEnv.define('self', instance);
@@ -83,7 +94,7 @@
 
         get(name) {
             if (this.fields.has(name)) return this.fields.get(name);
-            const method = this.pfClass.methods.find(m => m.name === name);
+            const method = this.pfClass.findMethod(name);
             if (method) return method;
             return undefined;
         }
@@ -127,6 +138,33 @@
                 meminfo: () => this.kernel ? this.kernel.sys_meminfo() : { totalMiB: 8192 },
                 cpuinfo: () => this.kernel ? this.kernel.sys_cpuinfo() : { cores: 4 }
             });
+
+            // std.string
+            this.globalEnv.define('string', {
+                length: (s) => (s != null ? String(s).length : 0),
+                upper: (s) => (s != null ? String(s).toUpperCase() : ''),
+                lower: (s) => (s != null ? String(s).toLowerCase() : ''),
+                trim: (s) => (s != null ? String(s).trim() : ''),
+                split: (s, sep) => (s != null ? String(s).split(sep) : []),
+                join: (arr, sep) => (Array.isArray(arr) ? arr.join(sep) : ''),
+                replace: (s, find, rep) => (s != null ? String(s).replace(find, rep) : '')
+            });
+
+            // std.collections
+            this.globalEnv.define('collections', {
+                list: () => [],
+                map: () => ({}),
+                size: (coll) => (Array.isArray(coll) ? coll.length : (coll && typeof coll === 'object' ? Object.keys(coll).length : 0)),
+                push: (arr, val) => { if (Array.isArray(arr)) arr.push(val); return arr; },
+                pop: (arr) => (Array.isArray(arr) ? arr.pop() : null),
+                keys: (obj) => (obj && typeof obj === 'object' ? Object.keys(obj) : [])
+            });
+
+            // std.time
+            this.globalEnv.define('time', {
+                now: () => Date.now(),
+                iso: () => new Date().toISOString()
+            });
         }
 
         run(sourceCode) {
@@ -157,7 +195,11 @@
             }
 
             if (stmt.type === 'ClassDecl') {
-                const cls = new PFClass(stmt.name, stmt.methods);
+                let supercls = null;
+                if (stmt.superclass) {
+                    supercls = env.get(stmt.superclass);
+                }
+                const cls = new PFClass(stmt.name, stmt.methods, supercls, stmt.interfaces);
                 env.define(stmt.name, cls);
                 return cls;
             }
@@ -187,6 +229,36 @@
                 throw new ReturnSignal(val);
             }
 
+            if (stmt.type === 'TryStmt') {
+                let res = null;
+                try {
+                    res = this.executeBlock(stmt.tryBlock, env);
+                } catch (err) {
+                    if (err instanceof ReturnSignal) {
+                        throw err;
+                    }
+                    if (stmt.catchBlock) {
+                        const catchEnv = new Environment(env);
+                        if (stmt.catchParam) {
+                            catchEnv.define(stmt.catchParam, err.message !== undefined ? err.message : err);
+                        }
+                        res = this.executeBlock(stmt.catchBlock, catchEnv);
+                    } else {
+                        throw err;
+                    }
+                } finally {
+                    if (stmt.finallyBlock) {
+                        this.executeBlock(stmt.finallyBlock, env);
+                    }
+                }
+                return res;
+            }
+
+            if (stmt.type === 'ThrowStmt') {
+                const thrownVal = this.evaluate(stmt.expression, env);
+                throw (thrownVal instanceof Error ? thrownVal : new Error(String(thrownVal)));
+            }
+
             if (stmt.type === 'BlockStmt') {
                 return this.executeBlock(stmt, new Environment(env));
             }
@@ -208,6 +280,34 @@
 
         evaluate(expr, env) {
             if (!expr) return null;
+
+            if (expr.type === 'SuperExpr') {
+                const selfInstance = env.get('self');
+                if (!selfInstance || !(selfInstance instanceof PFInstance)) {
+                    throw new Error("Runtime Error: 'super' referenced outside of class instance context");
+                }
+                const superclass = selfInstance.pfClass.superclass;
+                if (!superclass) {
+                    throw new Error(`Runtime Error: Class '${selfInstance.pfClass.name}' does not have a superclass`);
+                }
+                const superMethod = superclass.findMethod(expr.method);
+                if (!superMethod) {
+                    throw new Error(`Runtime Error: Super method '${expr.method}' not found`);
+                }
+                const evaluatedArgs = expr.args.map(a => this.evaluate(a, env));
+                const callEnv = new Environment(this.globalEnv);
+                callEnv.define('self', selfInstance);
+                superMethod.params.forEach((param, idx) => {
+                    if (param !== 'self') callEnv.define(param, evaluatedArgs[idx]);
+                });
+                try {
+                    this.executeBlock(superMethod.body, callEnv);
+                } catch (signal) {
+                    if (signal instanceof ReturnSignal) return signal.value;
+                    throw signal;
+                }
+                return null;
+            }
 
             if (expr.type === 'AssignExpr') {
                 const val = this.evaluate(expr.value, env);

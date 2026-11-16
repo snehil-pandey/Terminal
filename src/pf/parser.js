@@ -20,18 +20,21 @@
     class Program { constructor(body = []) { this.type = 'Program'; this.body = body; } }
     class VarDecl { constructor(name, typeAnnotation, init) { this.type = 'VarDecl'; this.name = name; this.typeAnnotation = typeAnnotation; this.init = init; } }
     class FuncDecl { constructor(name, params, returnType, body) { this.type = 'FuncDecl'; this.name = name; this.params = params; this.returnType = returnType; this.body = body; } }
-    class ClassDecl { constructor(name, methods = [], fields = []) { this.type = 'ClassDecl'; this.name = name; this.methods = methods; this.fields = fields; } }
+    class ClassDecl { constructor(name, methods = [], fields = [], superclass = null, interfaces = []) { this.type = 'ClassDecl'; this.name = name; this.methods = methods; this.fields = fields; this.superclass = superclass; this.interfaces = interfaces; } }
+    class InterfaceDecl { constructor(name, methods = []) { this.type = 'InterfaceDecl'; this.name = name; this.methods = methods; } }
     class IfStmt { constructor(condition, thenBranch, elseBranch) { this.type = 'IfStmt'; this.condition = condition; this.thenBranch = thenBranch; this.elseBranch = elseBranch; } }
     class WhileStmt { constructor(condition, body) { this.type = 'WhileStmt'; this.condition = condition; this.body = body; } }
     class ReturnStmt { constructor(value) { this.type = 'ReturnStmt'; this.value = value; } }
+    class TryStmt { constructor(tryBlock, catchParam, catchBlock, finallyBlock) { this.type = 'TryStmt'; this.tryBlock = tryBlock; this.catchParam = catchParam; this.catchBlock = catchBlock; this.finallyBlock = finallyBlock; } }
+    class ThrowStmt { constructor(expression) { this.type = 'ThrowStmt'; this.expression = expression; } }
     class BlockStmt { constructor(statements = []) { this.type = 'BlockStmt'; this.statements = statements; } }
     class ExprStmt { constructor(expression) { this.type = 'ExprStmt'; this.expression = expression; } }
     class BinaryExpr { constructor(left, op, right) { this.type = 'BinaryExpr'; this.left = left; this.op = op; this.right = right; } }
     class CallExpr { constructor(callee, args = []) { this.type = 'CallExpr'; this.callee = callee; this.args = args; } }
     class MemberExpr { constructor(object, property) { this.type = 'MemberExpr'; this.object = object; this.property = property; } }
+    class SuperExpr { constructor(method, args = []) { this.type = 'SuperExpr'; this.method = method; this.args = args; } }
     class Literal { constructor(value) { this.type = 'Literal'; this.value = value; } }
     class Identifier { constructor(name) { this.type = 'Identifier'; this.name = name; } }
-
     class AssignExpr { constructor(target, value) { this.type = 'AssignExpr'; this.target = target; this.value = value; } }
 
     class Parser {
@@ -85,11 +88,14 @@
             if (!token || token.type === TokenType.EOF) return null;
 
             if (token.type === TokenType.CLASS) return this.parseClass();
+            if (token.type === TokenType.INTERFACE) return this.parseInterface();
             if (token.type === TokenType.FUNCTION) return this.parseFunction();
             if (token.type === TokenType.LET || token.type === TokenType.CONST) return this.parseVarDecl();
             if (token.type === TokenType.IF) return this.parseIf();
             if (token.type === TokenType.WHILE) return this.parseWhile();
             if (token.type === TokenType.RETURN) return this.parseReturn();
+            if (token.type === TokenType.TRY) return this.parseTry();
+            if (token.type === TokenType.THROW) return this.parseThrow();
             if (token.type === TokenType.LBRACE) return this.parseBlock();
 
             return this.parseExprStmt();
@@ -98,6 +104,19 @@
         parseClass() {
             this.next(); // consume 'class'
             const name = this.next().value;
+            let superclass = null;
+            const interfaces = [];
+
+            if (this.match(TokenType.EXTENDS)) {
+                superclass = this.next().value;
+            }
+
+            if (this.match(TokenType.IMPLEMENTS)) {
+                do {
+                    interfaces.push(this.next().value);
+                } while (this.match(TokenType.COMMA));
+            }
+
             this.match(TokenType.COLON); // optional colon
             this.consumeNewlines();
             const hasBrace = this.match(TokenType.LBRACE);
@@ -110,16 +129,79 @@
                 this.consumeNewlines();
                 if (this.peek().type === TokenType.FUNCTION || this.peek().type === TokenType.INIT) {
                     methods.push(this.parseFunction());
-                } else if (this.peek().type === TokenType.LET || this.peek().type === TokenType.IDENTIFIER) {
+                } else if (this.peek().type === TokenType.LET) {
+                    this.next(); // consume 'let'
                     const fName = this.next().value;
                     fields.push(fName);
+                    this.match(TokenType.SEMICOLON);
+                } else if (this.peek().type === TokenType.IDENTIFIER) {
+                    // Check if followed by ( -> method shorthand: speak() { ... }
+                    const ident = this.next().value;
+                    if (this.peek() && this.peek().type === TokenType.LPAREN) {
+                        this.match(TokenType.LPAREN);
+                        const params = [];
+                        while (this.peek() && this.peek().type !== TokenType.RPAREN) {
+                            if (this.peek().type === TokenType.IDENTIFIER || this.peek().type === TokenType.SELF) {
+                                params.push(this.next().value);
+                            }
+                            this.match(TokenType.COMMA);
+                        }
+                        this.match(TokenType.RPAREN);
+                        let retType = 'void';
+                        if (this.match(TokenType.ARROW)) {
+                            retType = this.next().value;
+                        }
+                        this.match(TokenType.COLON);
+                        this.consumeNewlines();
+                        const body = this.parseBlock();
+                        methods.push(new FuncDecl(ident, params, retType, body));
+                    } else {
+                        fields.push(ident);
+                    }
                 } else {
                     break;
                 }
                 this.consumeNewlines();
             }
             if (hasBrace) this.match(TokenType.RBRACE);
-            return new ClassDecl(name, methods, fields);
+            return new ClassDecl(name, methods, fields, superclass, interfaces);
+        }
+
+        parseInterface() {
+            this.next(); // consume 'interface'
+            const name = this.next().value;
+            this.match(TokenType.COLON);
+            this.consumeNewlines();
+            const hasBrace = this.match(TokenType.LBRACE);
+
+            const methods = [];
+            while (this.peek() && this.peek().type !== TokenType.EOF) {
+                if (hasBrace && this.peek().type === TokenType.RBRACE) break;
+                this.consumeNewlines();
+                if (this.peek().type === TokenType.FUNCTION) {
+                    this.next(); // consume 'function'
+                    const mName = this.next().value;
+                    this.match(TokenType.LPAREN);
+                    const params = [];
+                    while (this.peek() && this.peek().type !== TokenType.RPAREN) {
+                        if (this.peek().type === TokenType.IDENTIFIER || this.peek().type === TokenType.SELF) {
+                            params.push(this.next().value);
+                        }
+                        this.match(TokenType.COMMA);
+                    }
+                    this.match(TokenType.RPAREN);
+                    let retType = 'void';
+                    if (this.match(TokenType.ARROW)) {
+                        retType = this.next().value;
+                    }
+                    methods.push({ name: mName, params, retType });
+                } else {
+                    break;
+                }
+                this.consumeNewlines();
+            }
+            if (hasBrace) this.match(TokenType.RBRACE);
+            return new InterfaceDecl(name, methods);
         }
 
         parseFunction() {
@@ -197,6 +279,42 @@
                 value = this.parseExpression();
             }
             return new ReturnStmt(value);
+        }
+
+        parseTry() {
+            this.next(); // consume 'try'
+            this.match(TokenType.COLON);
+            this.consumeNewlines();
+            const tryBlock = this.parseBlock();
+
+            let catchParam = null;
+            let catchBlock = null;
+            let finallyBlock = null;
+
+            this.consumeNewlines();
+            if (this.match(TokenType.CATCH)) {
+                if (this.peek() && (this.peek().type === TokenType.IDENTIFIER || this.peek().type === TokenType.SELF)) {
+                    catchParam = this.next().value;
+                }
+                this.match(TokenType.COLON);
+                this.consumeNewlines();
+                catchBlock = this.parseBlock();
+            }
+
+            this.consumeNewlines();
+            if (this.match(TokenType.FINALLY)) {
+                this.match(TokenType.COLON);
+                this.consumeNewlines();
+                finallyBlock = this.parseBlock();
+            }
+
+            return new TryStmt(tryBlock, catchParam, catchBlock, finallyBlock);
+        }
+
+        parseThrow() {
+            this.next(); // consume 'throw'
+            const expr = this.parseExpression();
+            return new ThrowStmt(expr);
         }
 
         parseBlock() {
@@ -280,6 +398,20 @@
             if (token.type === TokenType.TRUE) { this.next(); return new Literal(true); }
             if (token.type === TokenType.FALSE) { this.next(); return new Literal(false); }
             if (token.type === TokenType.NULL) { this.next(); return new Literal(null); }
+
+            if (token.type === TokenType.SUPER) {
+                this.next(); // consume 'super'
+                this.match(TokenType.DOT);
+                const method = this.next().value;
+                this.match(TokenType.LPAREN);
+                const args = [];
+                while (this.peek() && this.peek().type !== TokenType.RPAREN) {
+                    args.push(this.parseExpression());
+                    this.match(TokenType.COMMA);
+                }
+                this.match(TokenType.RPAREN);
+                return new SuperExpr(method, args);
+            }
 
             if (token.type === TokenType.IDENTIFIER || token.type === TokenType.SELF) {
                 let expr = new Identifier(this.next().value);

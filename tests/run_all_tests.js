@@ -17,7 +17,7 @@ try {
     execSync('node tests/os/os_test_suite.js', { stdio: 'inherit' });
 
     console.log('\n====================================================');
-    console.log(' ALL 27 TESTS PASSED SUCCESSFULLY! (100% Pass Rate) ');
+    console.log(' ALL 31 TESTS PASSED SUCCESSFULLY! (100% Pass Rate) ');
     console.log('====================================================');
 } catch (e) {
     console.error('\nTest Suite Failed with error:', e.message);

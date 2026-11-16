@@ -171,7 +171,91 @@ async function runAll() {
         assert.strictEqual(wm.windows.has(win2.id), false);
     });
 
-    // 8. Package Manager (PFPM)
+    test('Desktop WM: Workspace switching and window coordinates', () => {
+        const wm = new WindowManager();
+        const win1 = wm.openWindow('Terminal WS1', null, { workspace: 1, x: 50, y: 50 });
+        const win2 = wm.openWindow('Editor WS2', null, { workspace: 2, x: 100, y: 100 });
+
+        assert.strictEqual(win1.workspace, 1);
+        assert.strictEqual(win2.workspace, 2);
+        assert.strictEqual(wm.currentWorkspace, 1);
+        wm.switchWorkspace(2);
+        assert.strictEqual(wm.currentWorkspace, 2);
+    });
+
+    // 8. .pf Milestone 1 Advanced Features: Inheritance & Super
+    test('PF Language: Class inheritance, method overriding, and super calls', () => {
+        const logs = [];
+        const interp = new Interpreter((m) => logs.push(m));
+        const src = `
+            class BaseEntity {
+                init(name) {
+                    self.name = name
+                }
+                identify() {
+                    return "Entity:" + self.name
+                }
+            }
+
+            class Player extends BaseEntity {
+                init(name, level) {
+                    super.init(name)
+                    self.level = level
+                }
+                identify() {
+                    return super.identify() + " (Lvl " + self.level + ")"
+                }
+            }
+
+            let p = Player("Snehil", 99)
+            print(p.identify())
+        `;
+        interp.run(src);
+        assert(logs.some(l => l.includes('Entity:Snehil (Lvl 99)')));
+    });
+
+    // 9. .pf Milestone 1 Advanced Features: Try/Catch/Finally & Exceptions
+    test('PF Language: Try, catch, throw, and finally semantics', () => {
+        const logs = [];
+        const interp = new Interpreter((m) => logs.push(m));
+        const src = `
+            let status = "init"
+            try {
+                throw "Simulated Panic"
+            } catch err {
+                status = "caught:" + err
+            } finally {
+                print("finally_block_executed")
+            }
+            print(status)
+        `;
+        interp.run(src);
+        assert(logs.some(l => l.includes('finally_block_executed')));
+        assert(logs.some(l => l.includes('caught:Simulated Panic')));
+    });
+
+    // 10. .pf Static Type Checker & Diagnostics
+    test('PF Language: Static Type Checker validates types and catches mismatches', () => {
+        const TypeChecker = require('../../src/pf/typechecker');
+        const validCode = `
+            let a: Integer = 42
+            let b: Float = 3.14
+            let name: String = "PFOS"
+            let flag: Boolean = true
+        `;
+        const resValid = TypeChecker.check(validCode);
+        assert.strictEqual(resValid.valid, true);
+        assert.strictEqual(resValid.diagnostics.length, 0);
+
+        const invalidCode = `
+            let count: Integer = "this is not an integer"
+        `;
+        const resInvalid = TypeChecker.check(invalidCode);
+        assert.strictEqual(resInvalid.valid, false);
+        assert(resInvalid.diagnostics.length > 0);
+    });
+
+    // 11. Package Manager (PFPM)
     test('Package Manager: Install, list, and verify packages', () => {
         const pm = new PackageManager();
         assert(pm.listInstalled().some(p => p.name === 'coreutils'));
