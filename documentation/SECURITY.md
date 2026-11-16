@@ -14,11 +14,11 @@
         │  [ STRICT BOUNDARY - No Node child_process, No eval(), No local filesystem ]
         ▼
 [ Panfam-Terminal Execution Sandbox ]
-   ├── TerminalSecurity (Sanitizer & Escaper)
-   ├── POSIX Lexer & AST Parser
-   ├── Virtual File System (Inode memory tree & Layered Storage)
-   ├── Virtual Network Subsystem (Simulated routing & DNS)
-   └── Command Registries (Domain-restricted virtual implementations)
+   ├── TerminalSecurity ([security.js](file:///S:/Common/projects/Terminal/src/core/security.js))
+   ├── POSIX Lexer & Parser ([lexer.js](file:///S:/Common/projects/Terminal/src/core/lexer.js), [parser.js](file:///S:/Common/projects/Terminal/src/core/parser.js))
+   ├── Virtual File System ([vfs.js](file:///S:/Common/projects/Terminal/src/fs/vfs.js)) & Storage ([storage.js](file:///S:/Common/projects/Terminal/src/core/storage.js))
+   ├── Virtual Network Subsystem ([network.js](file:///S:/Common/projects/Terminal/src/net/network.js))
+   └── Command Registries ([registry.js](file:///S:/Common/projects/Terminal/src/commands/registry.js))
 ```
 
 1. **Host Isolation**: The terminal executes entirely in the client-side JavaScript sandbox. It has zero capability to interact with, invoke, or modify the host operating system, files, or hardware.

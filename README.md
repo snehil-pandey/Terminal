@@ -122,12 +122,15 @@ Run the included standalone Node test harness:
 node tests/test_suite.js
 ```
 
-All 12 test assertions check sanitization, XSS blocking, path traversal prevention, VFS integrity, theme switching, and command pipelines.
+All 18 automated test assertions check sanitization, XSS blocking, path traversal prevention, POSIX lexer & parser tokens, VFS inode integrity, symlinks, theme switching, and command pipelines.
 
 ---
 
-## 📜 Full Release History
+## 📜 Full Documentation & Release History
 
-Read the comprehensive version-by-version evolution in [release notes.md](file:///S:/Common/projects/Terminal/release%20notes.md).
-
-For architectural specifications, see [ARCHITECTURE.md](file:///S:/Common/projects/Terminal/docs/ARCHITECTURE.md).
+- Release Notes & Reflection: [release notes.md](file:///S:/Common/projects/Terminal/release%20notes.md)
+- Complete Changelog: [CHANGELOG.md](file:///S:/Common/projects/Terminal/CHANGELOG.md)
+- Engineering Upgrade Audit: [UPGRADE_AUDIT.md](file:///S:/Common/projects/Terminal/documentation/UPGRADE_AUDIT.md)
+- Cybersecurity & Threat Model: [SECURITY.md](file:///S:/Common/projects/Terminal/documentation/SECURITY.md)
+- Complete Command Reference: [COMMAND_REFERENCE.md](file:///S:/Common/projects/Terminal/documentation/COMMAND_REFERENCE.md)
+- Testing Methodology & Verification: [TESTING.md](file:///S:/Common/projects/Terminal/documentation/TESTING.md)

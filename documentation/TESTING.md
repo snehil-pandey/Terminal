@@ -1,7 +1,10 @@
 # Panfam-Terminal Test Documentation & Methodology
 
 **Test Harness:** Node.js Standalone Runner  
-**File:** `tests/test_suite.js`
+**File:** [test_suite.js](file:///S:/Common/projects/Terminal/tests/test_suite.js)  
+**Security Reference:** [SECURITY.md](file:///S:/Common/projects/Terminal/documentation/SECURITY.md)  
+**Command Reference:** [COMMAND_REFERENCE.md](file:///S:/Common/projects/Terminal/documentation/COMMAND_REFERENCE.md)  
+**Changelog:** [CHANGELOG.md](file:///S:/Common/projects/Terminal/CHANGELOG.md)
 
 ---
 
