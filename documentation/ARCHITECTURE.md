@@ -62,7 +62,7 @@
 
 ## 3. Native Application Suite ([`../src/apps/native_apps.js`](../src/apps/native_apps.js))
 
-1. **PF Code Studio**: Full-featured code editor with syntax highlighting, live VFS file opening/saving, `pf check` type diagnostics, deterministic formatting, and run/stop worker process lifecycle controls.
-2. **PF Task Manager**: Real-time operating system process monitor with live CPU and memory telemetry, process state badges, and authorized termination controls.
-3. **PF File Manager**: Direct directory navigation across `/home/user`, `/`, `/etc`, `/bin`, and `/proc` with folder/file creation and live synchronization with PFSH.
+1. **PF Code Studio**: Full-featured code editor with syntax highlighting, live VFS file opening/saving, `pf check` type diagnostics, deterministic formatting, run/stop worker process lifecycle controls, unsaved change dirty indicators, and before-close protection.
+2. **PF Task Manager**: Real-time operating system process monitor with live CPU and memory telemetry, process search filter, process state badges, and authorized termination controls.
+3. **PF File Manager**: Direct directory navigation across `/home/user`, `/`, `/etc`, `/bin`, and `/proc` with real-time file search, folder/file creation, and direct double-click file opening into Code Studio.
 4. **PF Settings**: Dynamic theme switcher (all 7 visual themes with high-contrast white text mode overlay) and disaster recovery backup export/import.
