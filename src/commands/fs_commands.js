@@ -99,10 +99,10 @@
                         const formatted = formatEntry(item, isDir, linkStr);
                         out += `${item.permissions} 1 ${item.owner} ${item.group} ${String(size).padStart(5)} ${item.modified.slice(0, 10)} ${formatted}\n`;
                     }
-                    return ExecutionResult.ok(out.trimEnd());
+                    return ExecutionResult.ok(out.trimEnd(), { isHtml: true });
                 } else {
                     const items = children.map(item => formatEntry(item, item.type === 'dir'));
-                    return ExecutionResult.ok(items.join('   '));
+                    return ExecutionResult.ok(items.join('   '), { isHtml: true });
                 }
             } catch (e) {
                 return ExecutionResult.error(`ls: ${e.message}`, 2);

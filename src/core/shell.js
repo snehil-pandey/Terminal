@@ -330,7 +330,11 @@
                 }
 
                 if (isFinalInPipeline && !hasStdoutRedir && stdout) {
-                    this.appendHtml(`<w>${Security.escapeHtml(stdout)}</w>\n`);
+                    if (res && res.metadata && res.metadata.isHtml) {
+                        this.appendHtml(`${Security.sanitizeHtml(stdout)}\n`);
+                    } else {
+                        this.appendHtml(`<w>${Security.escapeHtml(stdout)}</w>\n`);
+                    }
                 }
 
                 return { exitCode, stdout, stderr };

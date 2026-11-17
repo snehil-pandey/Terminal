@@ -29,6 +29,24 @@
     }
 
     /**
+     * Sanitizes HTML allowing only safe markup tags (span, c, g, y, o, w, r, iv, lsk, b, i, a)
+     * while stripping script tags, event handlers, and javascript: links.
+     * @param {string} html
+     * @returns {string}
+     */
+    function sanitizeHtml(html) {
+        if (!html || typeof html !== 'string') return '';
+        // Disallow dangerous tags: script, iframe, object, embed, form, input, button, style, link
+        let cleaned = html.replace(/<\/?(script|iframe|object|embed|form|input|button|style|link)[^>]*>/gi, '');
+        // Disallow inline event handlers (onload, onclick, onerror, etc.)
+        cleaned = cleaned.replace(/\s+on\w+\s*=\s*(['"]).*?\1/gi, '');
+        cleaned = cleaned.replace(/\s+on\w+\s*=\s*[^>\s]+/gi, '');
+        // Disallow javascript: or data: URIs in attributes
+        cleaned = cleaned.replace(/(href|src)\s*=\s*(['"])\s*(javascript|data|vbscript):.*?\2/gi, '');
+        return cleaned;
+    }
+
+    /**
      * Strips potentially dangerous control characters, ANSI escape sequences, or null bytes.
      * Prevents shell injection and memory corruptions in simulated buffers.
      * @param {string} input
@@ -72,6 +90,7 @@
 
     return {
         escapeHtml: escapeHtml,
+        sanitizeHtml: sanitizeHtml,
         sanitizeInput: sanitizeInput,
         isValidNodeName: isValidNodeName,
         isSafeUrl: isSafeUrl
