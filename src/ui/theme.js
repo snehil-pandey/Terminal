@@ -30,7 +30,11 @@
                 '--term-selection': 'rgba(90, 255, 0, 0.25)',
                 '--term-error': '#ff4d4d',
                 '--term-warn': '#ffd152',
-                '--term-info': '#40c4ff'
+                '--term-info': '#40c4ff',
+                '--term-code': '#e5c07b',
+                '--term-archive': '#e06c75',
+                '--term-image': '#d19a66',
+                '--term-symlink': '#00e5ff'
             }
         },
         'amber': {
@@ -47,7 +51,11 @@
                 '--term-selection': 'rgba(255, 176, 0, 0.25)',
                 '--term-error': '#ff4d4d',
                 '--term-warn': '#ffe066',
-                '--term-info': '#ffa500'
+                '--term-info': '#ffa500',
+                '--term-code': '#ffd24d',
+                '--term-archive': '#ff6b6b',
+                '--term-image': '#ffa000',
+                '--term-symlink': '#ffe680'
             }
         },
         'cyberpunk': {
@@ -64,7 +72,11 @@
                 '--term-selection': 'rgba(255, 0, 127, 0.3)',
                 '--term-error': '#ff2a6d',
                 '--term-warn': '#ffe600',
-                '--term-info': '#05d9e8'
+                '--term-info': '#05d9e8',
+                '--term-code': '#ffe600',
+                '--term-archive': '#ff0055',
+                '--term-image': '#00f0ff',
+                '--term-symlink': '#05d9e8'
             }
         },
         'dracula': {
@@ -81,7 +93,11 @@
                 '--term-selection': 'rgba(68, 71, 90, 0.5)',
                 '--term-error': '#ff5555',
                 '--term-warn': '#f1fa8c',
-                '--term-info': '#8be9fd'
+                '--term-info': '#8be9fd',
+                '--term-code': '#f1fa8c',
+                '--term-archive': '#ff5555',
+                '--term-image': '#ffb86c',
+                '--term-symlink': '#8be9fd'
             }
         },
         'nord': {
@@ -98,7 +114,11 @@
                 '--term-selection': 'rgba(136, 192, 208, 0.25)',
                 '--term-error': '#bf616a',
                 '--term-warn': '#ebcb8b',
-                '--term-info': '#88c0d0'
+                '--term-info': '#88c0d0',
+                '--term-code': '#88c0d0',
+                '--term-archive': '#bf616a',
+                '--term-image': '#d08770',
+                '--term-symlink': '#81a1c1'
             }
         },
         'monokai': {
@@ -115,7 +135,11 @@
                 '--term-selection': 'rgba(255, 255, 255, 0.2)',
                 '--term-error': '#f92672',
                 '--term-warn': '#e6db74',
-                '--term-info': '#66d9ef'
+                '--term-info': '#66d9ef',
+                '--term-code': '#e6db74',
+                '--term-archive': '#f92672',
+                '--term-image': '#fd971f',
+                '--term-symlink': '#66d9ef'
             }
         },
         'solarized': {
@@ -132,7 +156,11 @@
                 '--term-selection': 'rgba(7, 54, 66, 0.6)',
                 '--term-error': '#dc322f',
                 '--term-warn': '#b58900',
-                '--term-info': '#2aa198'
+                '--term-info': '#2aa198',
+                '--term-code': '#b58900',
+                '--term-archive': '#dc322f',
+                '--term-image': '#cb4b16',
+                '--term-symlink': '#2aa198'
             }
         }
     };

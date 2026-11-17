@@ -10,6 +10,10 @@
     --term-error: #ff4d4d;
     --term-warn: #ffd152;
     --term-info: #40c4ff;
+    --term-code: #e5c07b;
+    --term-archive: #e06c75;
+    --term-image: #d19a66;
+    --term-symlink: #00e5ff;
     --term-font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', Courier, monospace;
 }
 
@@ -164,7 +168,7 @@ lsk {
     font-family: Consolas, monospace;
 }
 
-/* File and Node Type Styling */
+/* File and Node Type Styling (Fully Dynamic CSS Variables for All 7 Themes) */
 .pf-node-dir, dir {
     color: var(--term-path);
     font-weight: bold;
@@ -176,20 +180,20 @@ lsk {
 }
 
 .pf-node-symlink, symlink {
-    color: #00e5ff;
+    color: var(--term-symlink);
     font-style: italic;
 }
 
 .pf-node-archive, archive {
-    color: #e06c75;
+    color: var(--term-archive);
 }
 
 .pf-node-code, codefile {
-    color: #e5c07b;
+    color: var(--term-code);
 }
 
 .pf-node-image, imgfile {
-    color: #d19a66;
+    color: var(--term-image);
 }
 
 .pf-node-file, file {
