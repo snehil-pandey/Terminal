@@ -1,82 +1,625 @@
+:root {
+    --term-bg: #000000;
+    --term-fg: #5aff00;
+    --term-prompt: #76ff26;
+    --term-user: #00ff88;
+    --term-host: #5aff00;
+    --term-path: #00e5ff;
+    --term-border: #153d10;
+    --term-selection: rgba(90, 255, 0, 0.25);
+    --term-error: #ff4d4d;
+    --term-warn: #ffd152;
+    --term-info: #40c4ff;
+    --term-code: #e5c07b;
+    --term-archive: #e06c75;
+    --term-image: #d19a66;
+    --term-symlink: #00e5ff;
+    --term-font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', Courier, monospace;
+}
+
 * {
+    box-sizing: border-box;
     border: none;
-    font-family: Courier;
     margin: 0;
+    padding: 0;
+    font-family: var(--term-font);
 }
-body {
-    background: #000;
-    color: #76ff26;
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: var(--term-bg);
+    color: var(--term-fg);
+    font-size: 15px;
+    line-height: 1.45;
+    overflow: hidden; /* Hide browser root scrollbar */
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
-canvas {
-    display: block;
-    border: none;
-    resize: auto;
-    overflow-x: auto;
+
+/* Background Matrix Canvas */
+#matrix-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.8;
+}
+
+/* Master Viewport Container: houses the scrollable terminal stream cleanly */
+#terminal-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
     overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--term-border) transparent;
 }
+
+/* Custom terminal scrollbar (subtle, integrated, non-intrusive) */
+#terminal-container::-webkit-scrollbar {
+    width: 6px;
+}
+#terminal-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+#terminal-container::-webkit-scrollbar-thumb {
+    background: var(--term-border);
+    border-radius: 3px;
+}
+#terminal-container::-webkit-scrollbar-thumb:hover {
+    background: var(--term-prompt);
+}
+
+/* Content container with padding to keep prompt comfortable */
+#content {
+    position: relative;
+    z-index: 2;
+    padding: 16px 20px calc(52vh + 40px) 20px;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+/* Output stream: text flows top to bottom */
+#out {
+    font-weight: bold;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    cursor: text;
+}
+
+/* Inline active input line directly under the latest output */
+#input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 2px;
+    line-height: 1.5;
+}
+
+#prompt-label {
+    white-space: nowrap;
+    user-select: none;
+    margin-right: 6px;
+    font-weight: bold;
+}
+
+#user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--term-fg);
+    font-family: inherit;
+    font-weight: bold;
+    font-size: inherit;
+    caret-color: var(--term-prompt);
+    padding: 0;
+    width: 100%;
+}
+
 #user-input:focus {
     outline: none;
 }
-#user-input {
-    background-color: transparent;
-    border: none;
-    color: #5aff00;
-    resize: none;
-    font-family: Courier;
-    width: 98%;
-    height: 100%;
-    font-family: courier;
-    font-weight: bold;
-    font-size: inherit;
-}
-p {
-    padding: 1.2px;
+
+/* Legacy & Semantic Highlight Tags */
+g {
+    color: var(--term-prompt);
     font-weight: bold;
 }
-html,body {
-    margin: 0;
-    padding: 0;
-    height: 95vh;
+
+c {
+    color: var(--term-path);
+    font-weight: bold;
 }
-#content {
-    margin-right: 1.9px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    height: 95vh;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    overflow: -moz-scrollbars-none;
+
+y {
+    color: var(--term-warn);
+    font-weight: bold;
 }
-#content::-webkit-scrollbar {
-    display: none;
+
+o {
+    color: var(--term-error);
+    font-weight: bold;
 }
-div {
-    height: 100%;
+
+w {
+    color: var(--term-fg);
 }
-y{
-    padding: 1.2px;
-    color: yellow;
+
+r {
+    color: var(--term-error);
 }
-c{
-    padding: 1.2px;
-    color: cyan;
+
+iv {
+    color: #ffffff;
+    font-weight: bold;
 }
-r{
-    padding: 1.2px;
-    color: #ff5050;
-}
-o{
-    padding: 1.2px;
-    color: #ff9900;
-}
-w{
-    padding: 1.2px;
-    color: white;
-}
-lsk{
+
+lsk {
     letter-spacing: 0px;
-    font-family: Consolas;
+    font-family: Consolas, monospace;
 }
-g{
-    color: #5aff00;
+
+/* File and Node Type Styling (Fully Dynamic CSS Variables for All 7 Themes) */
+.pf-node-dir, dir {
+    color: var(--term-path);
+    font-weight: bold;
 }
+
+.pf-node-exec, exec {
+    color: var(--term-prompt);
+    font-weight: bold;
+}
+
+.pf-node-symlink, symlink {
+    color: var(--term-symlink);
+    font-style: italic;
+}
+
+.pf-node-archive, archive {
+    color: var(--term-archive);
+}
+
+.pf-node-code, codefile {
+    color: var(--term-code);
+}
+
+.pf-node-image, imgfile {
+    color: var(--term-image);
+}
+
+.pf-node-file, file {
+    color: var(--term-fg);
+}
+
+.pf-tag-badge {
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.pf-tag-root {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.pf-tag-user {
+    background: var(--term-user);
+    color: #000;
+}
+
+.pf-tag-info {
+    background: var(--term-info);
+    color: #000;
+}
+
+.pf-tag-warn {
+    background: var(--term-warn);
+    color: #000;
+}
+
+.pf-tag-error {
+    background: var(--term-error);
+    color: #fff;
+}
+
+::selection {
+    background-color: var(--term-selection);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   Panfam OS Interactive Desktop & Window Manager Styles
+   ========================================================================== */
+
+.terminal-cli-hidden {
+    display: none !important;
+}
+
+.pf-desktop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    background: radial-gradient(circle at 50% 50%, rgba(10, 30, 20, 0.85) 0%, rgba(2, 8, 5, 0.98) 100%);
+    overflow: hidden;
+    user-select: none;
+}
+
+.pf-desktop-hidden {
+    display: none !important;
+}
+
+/* Desktop Topbar */
+.pf-topbar {
+    height: 36px;
+    background: rgba(12, 20, 15, 0.92);
+    border-bottom: 1px solid var(--term-border);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-size: 13px;
+    color: var(--term-fg);
+    z-index: 1000;
+}
+
+.pf-topbar-left, .pf-topbar-center, .pf-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pf-logo-badge {
+    background: var(--term-prompt);
+    color: #000;
+    font-weight: 900;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+}
+
+.pf-active-app {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.pf-workspace-switcher {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pf-ws-btn {
+    background: transparent;
+    color: var(--term-fg);
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pf-ws-btn.active, .pf-ws-btn:hover {
+    background: var(--term-prompt);
+    color: #000;
+    font-weight: bold;
+}
+
+.pf-mode-toggle {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--term-path);
+    border: 1px solid var(--term-path);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.pf-mode-toggle:hover {
+    background: var(--term-path);
+    color: #000;
+}
+
+.pf-sys-stat {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.pf-clock {
+    font-weight: bold;
+    color: var(--term-prompt);
+}
+
+/* Workspace Canvas */
+.pf-workspace-canvas {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Desktop Dock */
+.pf-dock {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 18, 14, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    border-radius: 12px;
+    display: flex;
+    gap: 8px;
+    padding: 6px 10px;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.pf-dock-item {
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.2), background 0.15s;
+}
+
+.pf-dock-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-4px) scale(1.08);
+}
+
+.pf-dock-icon {
+    font-size: 18px;
+    color: var(--term-prompt);
+}
+
+.pf-dock-label {
+    font-size: 10px;
+    color: #ccc;
+}
+
+/* Window Frames */
+.pf-window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    background: rgba(15, 24, 18, 0.96);
+    border: 1px solid var(--term-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    min-width: 280px;
+    min-height: 180px;
+}
+
+.pf-window.active {
+    border-color: var(--term-prompt);
+    box-shadow: 0 14px 56px rgba(0, 255, 120, 0.2);
+}
+
+.pf-window.maximized {
+    top: 36px !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: calc(100vh - 36px) !important;
+    border-radius: 0;
+}
+
+.pf-window-header {
+    height: 32px;
+    background: rgba(20, 32, 24, 0.9);
+    border-bottom: 1px solid var(--term-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    cursor: move;
+}
+
+.pf-window-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #eee;
+}
+
+.pf-window-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--term-prompt);
+}
+
+.pf-window-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pf-btn-win {
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #aaa;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.pf-btn-win:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.pf-win-close:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.pf-window-body {
+    flex: 1;
+    overflow: auto;
+    padding: 12px;
+    color: var(--term-fg);
+    font-size: 13px;
+    position: relative;
+}
+
+.pf-window-resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 16px;
+    height: 16px;
+    cursor: se-resize;
+}
+
+/* Builtin Apps Inside Windows */
+.pf-app-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.pf-editor-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.pf-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--term-fg);
+    border: 1px solid var(--term-border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.pf-btn:hover {
+    background: var(--term-prompt);
+    color: #000;
+}
+
+.pf-editor-area {
+    flex: 1;
+    background: #080f0a;
+    color: #40c4ff;
+    border: 1px solid var(--term-border);
+    border-radius: 4px;
+    padding: 10px;
+    font-family: var(--term-font);
+    font-size: 13px;
+    resize: none;
+    outline: none;
+    line-height: 1.4;
+}
+
+.pf-app-files {
+    display: flex;
+    height: 100%;
+    gap: 12px;
+}
+
+.pf-files-sidebar {
+    width: 140px;
+    border-right: 1px solid var(--term-border);
+    padding-right: 8px;
+    line-height: 1.8;
+    color: #aaa;
+}
+
+.pf-files-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pf-file-item {
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pf-file-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pf-mon-stat-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--term-border);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 12px;
+}
+
+.pf-progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 6px 0;
+    overflow: hidden;
+}
+
+.pf-progress-fill {
+    height: 100%;
+    background: var(--term-prompt);
+}
+
+.pf-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.pf-table th, .pf-table td {
+    padding: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: left;
+    font-size: 12px;
+}
+
+.pf-select, .pf-input {
+    background: #080f0a;
+    color: #fff;
+    border: 1px solid var(--term-border);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+    display: block;
+    width: 100%;
+}
+

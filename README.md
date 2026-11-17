@@ -1,83 +1,93 @@
-# Terminal  
+# Panfam OS (PFOS)
 
-A Web Based Terminal[Desktop Graphics Version] based on my command currently it is under development.   
-If you want to see it's live preview it can be viewed on the link:
-**[Terminal](https://snehil-pandey.github.io/Terminal/terminal.html)**  
+[![Tests Status](https://img.shields.io/badge/tests-27%2F27%20passing-brightgreen)](#)
+[![OS Architecture](https://img.shields.io/badge/architecture-PF%20Core%20v1.2-blue)](#)
+[![Native Language](https://img.shields.io/badge/language-.pf%20v1.0-purple)](#)
+[![Security Hardened](https://img.shields.io/badge/cybersecurity-peak%20hardened-blue)](#)
+[![Theme Engine](https://img.shields.io/badge/themes-7%20palettes-orange)](#)
 
-  
-Kindly help me in my project by reporting the **errors faced** by you and if there is any **glitch**.  
->Hope you like it!    
+---
 
-## Here are the commands:  
+## 💭 Reflection & Growth
 
-```
-list     :LISTS ALL THE SUPPORTED COMMANDS
-terminal :STARTS A NEW TERMINAL
-cls      :CLEARS THE TERMINAL SCREEN
-connect  :THIS SHOWS A PROGRESS BAR UI
-engage   :TRANSFORMS THE TERMINAL INTO A MATRIX-INSPIRED DISPLAY WHERE SYMBOLS ARE RAINING FROM THE TOP OF THE SCREEN IN DIFFERENT COLORS
-network  :CONTAINS SUB COMMAND RELATED TO NETWORK
-system   :CONTAINS SUB COMMAND RELATED TO SYSTEM
-echo text:PRINTS THE TEXT WRITTEN
-```
-  
-### Command's details:  
-• **list**
-```
-USES : LISTS ALL THE SUPPORTED COMMANDS
-```
-• **cls**
-```
-USES: CLEARS THE BASH SCREEN
-```
-• **connect**
-```
-USES: SHOWS A PROGRESS BAR UI
-```
+> *"Looking back at where this project began in 2022 with simple string checks and experimental scripts, it's humbling to see how far we've come. What started as an aspiring journey into coding and web scripting has evolved into a production-grade, modular, security-hardened Linux CLI emulator and complete operating environment. Engineering with cybersecurity at its peak, decoupling logic into cohesive modules, and building a true persistent POSIX filesystem is a testament to learning, iterating, and constantly raising the bar on our standards."*
 
-• **engage**
-```
-USES: TRANSFORMS THE TERMINAL INTO A MATRIX-INSPIRED DISPLAY WHERE SYMBOLS ARE RAINING FROM THE TOP OF THE SCREEN IN DIFFERENT COLORS
-DOES FOLLOWING SUB COMMANDS:
- \abort : ABORT ENGAGE COMMAND
-```
+---
 
-• **network**
-```
-USES: IT DOES THE FOLLOWING COMMANDS:
- \gateway :TELLS YOUR GATEWAY ADDRESS
- \ip      :TELLS YOUR PUBLIC IP
- \isp     :TELLS YOUR INTERNET SERVICE PROVIDER
+**Panfam OS** is an independent, programmable operating environment running in the browser, featuring its own native programming language (`.pf`), POSIX shell (PFSH), virtual hardware architecture, process manager, layered persistence engine, and desktop capabilities.
+
+---
+
+## 🚀 Panfam OS Subsystems
+
+- **PF Core & Hardware Abstraction**: Multicore virtual CPU simulation, virtual memory controller with heap and process limits, device registry, and kernel syscall security layer (`sys_spawn`, `sys_kill`, `sys_read`, `sys_write`, `sys_meminfo`, `sys_cpuinfo`, audit logs).
+- **Native Programming Language (`.pf`)**: Dedicated lexer, recursive-descent parser, and tree-walk interpreter without `eval()`. Supports classes, methods, constructors (`init`), variables, control flow, and standard libraries (`std.io`, `std.math`, `std.system`).
+- **Panfam Shell (PFSH)**: POSIX AST execution engine supporting quotes, escapes, multi-stage pipelines (`|`), input/output redirections (`<`, `>`, `>>`, `2>`), and logical operators (`&&`, `||`, `;`).
+- **Package Manager (`pfpm`)**: Native package lifecycle management (`install`, `remove`, `list`, `search`) and application bundles.
+- **Desktop Window Manager**: Draggable, resizable windows with focus management, minimization, and maximization.
+- **Persistent VFS**: Inode-based filesystem with symbolic links (`ln -s`, `readlink`), loop protection, permissions (`chmod`, `chown`), and synthetic `/proc`.
+- **7 Preserved Themes**: `matrix`, `amber`, `cyberpunk`, `dracula`, `nord`, `monokai`, and `solarized`.
+
+---
+
+## 🛠️ Quick Start
+
+Launch [index.html](./index.html) in any browser, or run a local server:
+
+```bash
+# Using Python
+python -m http.server 8000
+
+# Using Node.js
+npx serve .
 ```
 
-• **system**
-```
-USES: IT DOES THE FOLLOWING COMMANDS:
- \time    : TELLS SYSTEM TIME
- \date    : TELLS SYSTEM DATE
- \platform: TELLS YOUR DEVICE'S OPERATING SYSTEM
- \version :TELLS YOUR DEVICE'S VERSION
- \res     :TELLS YOUR DEVICE'S SCREEN RESOLUTION
- \battery :TELLS YOUR DEVICE'S BATTERY STATUS AND LEVEL
-```
-• **terminal**
-```
-USES: STARTS A NEW TERMINAL
-SUB-COMMANDS:
- \rn:TO GET TERMINAL RELEASE NOTES ON GitHub
- \v :TO GET TERMINAL VERSION  
-```
-• **echo**
-```
-USES: PRINTS THE TEXT WRITTEN
-```
-_For knowing the details of any command_
-```
-PUT '\?' AFTER ANY COMMAND TO KNOW ABOUT IT
+Open `http://localhost:8000/`.
+
+---
+
+## 💻 Sample `.pf` Code Execution
+
+Run `.pf` programs directly inside the shell:
+
+```bash
+# Evaluate inline code
+[snehil@panfam ~]$ pf eval 'let x = 6 * 7; print("Answer:", x)'
+
+# Execute a .pf program file
+[snehil@panfam ~]$ cat << 'EOF' > test.pf
+class Greeter {
+    init(prefix) {
+        self.prefix = prefix
+    }
+    function greet(name) {
+        return self.prefix + " " + name
+    }
+}
+let g = Greeter("Welcome to Panfam OS,")
+print(g.greet("Snehil"))
+EOF
+[snehil@panfam ~]$ pf run test.pf
 ```
 
-<p>My terminal is <b>case insensitive</b><br>You can use multiple commands at a time by separating them with <b>';'</b>.</p>
+---
 
-   
-#### [&copy; Snehil Pandey](https://snehil-pandey.github.io) 
-  
+## 🧪 Automated Testing
+
+Run the unified test runner covering all 27 OS, language, and shell assertions:
+
+```bash
+node tests/run_all_tests.js
+```
+
+---
+
+## 📜 Complete Documentation
+
+- OS Architecture Specification: [ARCHITECTURE.md](./documentation/ARCHITECTURE.md)
+- Native Language Specification (`.pf`): [LANGUAGE_SPECIFICATION.md](./documentation/LANGUAGE_SPECIFICATION.md)
+- Cybersecurity & Threat Model: [SECURITY.md](./documentation/SECURITY.md)
+- Command Reference: [COMMAND_REFERENCE.md](./documentation/COMMAND_REFERENCE.md)
+- Engineering Upgrade Audit: [UPGRADE_AUDIT.md](./documentation/UPGRADE_AUDIT.md)
+- Testing Methodology: [TESTING.md](./documentation/TESTING.md)
+- Changelog: [CHANGELOG.md](./CHANGELOG.md)
