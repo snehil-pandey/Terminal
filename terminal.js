@@ -28,7 +28,7 @@
 
         // Update prompt label if present
         function refreshPromptLabel() {
-            if (promptLabelEl) {
+            if (promptLabelEl && shellInstance) {
                 promptLabelEl.innerHTML = shellInstance.getPromptHtml();
             }
         }
@@ -38,6 +38,8 @@
             originalAppendHtml(html);
             refreshPromptLabel();
         };
+
+        shellInstance.onPromptChange = refreshPromptLabel;
 
         shellInstance.mount(screenEl, inputEl);
         refreshPromptLabel();

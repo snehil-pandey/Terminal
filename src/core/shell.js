@@ -138,12 +138,20 @@
         setupEventListeners() {
             if (!this.inputElement) return;
 
-            this.inputElement.addEventListener('keydown', (e) => {
+            let isExecuting = false;
+
+            this.inputElement.addEventListener('keydown', async (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    if (isExecuting) return; // Prevent double trigger / interleaved execution
                     const line = this.inputElement.value;
                     this.inputElement.value = '';
-                    this.executeCommandLine(line);
+                    isExecuting = true;
+                    try {
+                        await this.executeCommandLine(line);
+                    } finally {
+                        isExecuting = false;
+                    }
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     if (this.history.length > 0) {
@@ -224,6 +232,7 @@
 
             if (!cleanLine) {
                 this.appendHtml(prompt + '\n');
+                if (typeof this.onPromptChange === 'function') this.onPromptChange();
                 return;
             }
 
@@ -245,6 +254,11 @@
             } catch (err) {
                 this.appendHtml(`<o>bash: syntax error: ${Security.escapeHtml(err.message)}</o>\n`);
                 this.lastExitCode = 2;
+            } finally {
+                // Instantly update active input prompt label after command completes
+                if (typeof this.onPromptChange === 'function') {
+                    this.onPromptChange();
+                }
             }
         }
 
