@@ -145,19 +145,49 @@
             }
 
             if (stmt.type === 'ClassDecl') {
-                if (stmt.superclass && !this.classes.has(stmt.superclass)) {
-                    this.diagnostics.push(new Diagnostic(
-                        `Cannot find superclass '${stmt.superclass}' for class '${stmt.name}'`,
-                        1, 1, 'error', this.filename
-                    ));
+                if (stmt.superclass) {
+                    if (!this.classes.has(stmt.superclass)) {
+                        this.diagnostics.push(new Diagnostic(
+                            `Cannot find superclass '${stmt.superclass}' for class '${stmt.name}'`,
+                            1, 1, 'error', this.filename
+                        ));
+                    } else {
+                        // Check for inheritance cycle (e.g. A extends B, B extends A or self-inheritance)
+                        let curr = stmt.superclass;
+                        const visited = new Set([stmt.name]);
+                        while (curr) {
+                            if (visited.has(curr)) {
+                                this.diagnostics.push(new Diagnostic(
+                                    `Cyclic inheritance detected: class '${stmt.name}' extends '${curr}' in an inheritance cycle`,
+                                    1, 1, 'error', this.filename
+                                ));
+                                break;
+                            }
+                            visited.add(curr);
+                            const parentClass = this.classes.get(curr);
+                            curr = parentClass ? parentClass.superclass : null;
+                        }
+                    }
                 }
 
                 for (const ifaceName of stmt.interfaces) {
-                    if (!this.interfaces.has(ifaceName)) {
+                    const iface = this.interfaces.get(ifaceName);
+                    if (!iface) {
                         this.diagnostics.push(new Diagnostic(
                             `Cannot find interface '${ifaceName}' implemented by '${stmt.name}'`,
                             1, 1, 'error', this.filename
                         ));
+                    } else {
+                        // Validate that all interface methods are implemented
+                        for (const reqMethod of iface.methods) {
+                            const implemented = stmt.methods.find(m => m.name === reqMethod.name);
+                            if (!implemented) {
+                                this.diagnostics.push(new Diagnostic(
+                                    `Class '${stmt.name}' fails to implement interface method '${reqMethod.name}' from interface '${ifaceName}'`,
+                                    1, 1, 'error', this.filename
+                                ));
+                            }
+                        }
                     }
                 }
 

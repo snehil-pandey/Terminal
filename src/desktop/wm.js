@@ -31,16 +31,21 @@
     }
 
     class WindowManager {
-        constructor(containerEl = null) {
+        constructor(containerEl = null, services = null) {
             this.windows = new Map();
             this.activeWindowId = null;
             this.nextWindowId = 1;
             this.topZ = 100;
             this.currentWorkspace = 1;
             this.container = containerEl;
+            this.services = services || {}; // kernel, vfs, pm, hw
             this.dockEl = null;
             this.topBarEl = null;
             this.isDesktopActive = false;
+        }
+
+        setServices(services) {
+            this.services = services;
         }
 
         init(container = document.body) {
@@ -198,6 +203,20 @@
             if (clockEl) {
                 const now = new Date();
                 clockEl.textContent = now.toTimeString().split(' ')[0];
+            }
+
+            // Update live telemetry from shared services
+            if (this.services && this.services.hw) {
+                const cpuEl = document.getElementById('pf-sys-cpu');
+                const memEl = document.getElementById('pf-sys-mem');
+                if (cpuEl) {
+                    const stats = this.services.hw.getCPUStats ? this.services.hw.getCPUStats() : { loadPercent: 4 };
+                    cpuEl.textContent = `CPU: ${stats.loadPercent}%`;
+                }
+                if (memEl && this.services.hw.memory) {
+                    const memPercent = Math.round((this.services.hw.memory.usedBytes / this.services.hw.memory.totalBytes) * 100);
+                    memEl.textContent = `MEM: ${memPercent}%`;
+                }
             }
         }
 

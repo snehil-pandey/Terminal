@@ -253,9 +253,66 @@ async function runAll() {
         const resInvalid = TypeChecker.check(invalidCode);
         assert.strictEqual(resInvalid.valid, false);
         assert(resInvalid.diagnostics.length > 0);
+
+        // Cyclic inheritance check
+        const cycleCode = `
+            class NodeA extends NodeB {}
+            class NodeB extends NodeA {}
+        `;
+        const resCycle = TypeChecker.check(cycleCode);
+        assert.strictEqual(resCycle.valid, false);
+        assert(resCycle.diagnostics.some(d => d.message.includes('Cyclic inheritance')));
+
+        // Missing interface method check
+        const missingIfaceCode = `
+            interface Speaker {
+                function speak() -> Void
+            }
+            class SilentRobot implements Speaker {}
+        `;
+        const resMissingIface = TypeChecker.check(missingIfaceCode);
+        assert.strictEqual(resMissingIface.valid, false);
+        assert(resMissingIface.diagnostics.some(d => d.message.includes('fails to implement interface method')));
     });
 
-    // 11. Package Manager (PFPM)
+    // 11. .pf Standard Library Namespaces
+    test('PF Language: Standard Library namespaces (std.string, std.collections, std.math)', () => {
+        const logs = [];
+        const interp = new Interpreter((m) => logs.push(m));
+        const src = `
+            let str = "  panfam-os  "
+            let trimmed = string.trim(str)
+            let upper = string.upper(trimmed)
+            let parts = string.split(upper, "-")
+            let hasOs = string.includes(upper, "OS")
+
+            let items = collections.list()
+            collections.push(items, 100)
+            collections.push(items, 200)
+            let sz = collections.size(items)
+
+            print("Trimmed:", trimmed)
+            print("HasOS:", hasOs)
+            print("Size:", sz)
+        `;
+        interp.run(src);
+        assert(logs.some(l => l.includes('Trimmed: panfam-os')));
+        assert(logs.some(l => l.includes('HasOS: true')));
+        assert(logs.some(l => l.includes('Size: 2')));
+    });
+
+    // 12. .pf Formatter Determinism
+    test('PF Language: Formatter formats code deterministically', () => {
+        const Formatter = require('../../src/pf/formatter');
+        const rawCode = `class App{init(){self.val=10+20}}`;
+        const pass1 = Formatter.format(rawCode);
+        const pass2 = Formatter.format(pass1);
+        assert.strictEqual(pass1, pass2); // Idempotent
+        assert(pass1.includes('class App {'));
+        assert(pass1.includes('self.val = 10 + 20'));
+    });
+
+    // 13. Package Manager (PFPM)
     test('Package Manager: Install, list, and verify packages', () => {
         const pm = new PackageManager();
         assert(pm.listInstalled().some(p => p.name === 'coreutils'));

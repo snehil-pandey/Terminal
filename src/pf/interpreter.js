@@ -147,24 +147,49 @@
                 trim: (s) => (s != null ? String(s).trim() : ''),
                 split: (s, sep) => (s != null ? String(s).split(sep) : []),
                 join: (arr, sep) => (Array.isArray(arr) ? arr.join(sep) : ''),
-                replace: (s, find, rep) => (s != null ? String(s).replace(find, rep) : '')
+                replace: (s, find, rep) => (s != null ? String(s).replace(find, rep) : ''),
+                includes: (s, sub) => (s != null ? String(s).includes(sub) : false),
+                startsWith: (s, prefix) => (s != null ? String(s).startsWith(prefix) : false),
+                endsWith: (s, suffix) => (s != null ? String(s).endsWith(suffix) : false)
             });
 
             // std.collections
             this.globalEnv.define('collections', {
                 list: () => [],
                 map: () => ({}),
+                set: () => [],
                 size: (coll) => (Array.isArray(coll) ? coll.length : (coll && typeof coll === 'object' ? Object.keys(coll).length : 0)),
                 push: (arr, val) => { if (Array.isArray(arr)) arr.push(val); return arr; },
                 pop: (arr) => (Array.isArray(arr) ? arr.pop() : null),
-                keys: (obj) => (obj && typeof obj === 'object' ? Object.keys(obj) : [])
+                keys: (obj) => (obj && typeof obj === 'object' ? Object.keys(obj) : []),
+                has: (coll, val) => (Array.isArray(coll) ? coll.includes(val) : (coll && typeof coll === 'object' ? (val in coll) : false)),
+                setAdd: (arr, val) => { if (Array.isArray(arr) && !arr.includes(val)) arr.push(val); return arr; }
             });
 
             // std.time
             this.globalEnv.define('time', {
                 now: () => Date.now(),
-                iso: () => new Date().toISOString()
+                iso: () => new Date().toISOString(),
+                sleep: (ms) => {
+                    const start = Date.now();
+                    while (Date.now() - start < ms) { /* sync tick bounded */ }
+                    return ms;
+                }
             });
+
+            // Bind namespaced std object for consistency with std.io, std.math, etc.
+            const stdObj = {
+                io: {
+                    print: this.globalEnv.get('print'),
+                    write: (s) => this.output(String(s))
+                },
+                math: this.globalEnv.get('math'),
+                string: this.globalEnv.get('string'),
+                collections: this.globalEnv.get('collections'),
+                time: this.globalEnv.get('time'),
+                system: this.globalEnv.get('system')
+            };
+            this.globalEnv.define('std', stdObj);
         }
 
         run(sourceCode) {

@@ -48,6 +48,14 @@
         // Initialize Panfam OS Desktop Window Manager
         if (window.PFWindowManager) {
             window.pfWM = new window.PFWindowManager.WindowManager();
+            if (shellInstance) {
+                window.pfWM.setServices({
+                    kernel: shellInstance.kernel || null,
+                    vfs: shellInstance.vfs || null,
+                    network: shellInstance.network || null,
+                    shell: shellInstance
+                });
+            }
             window.pfWM.init(document.body);
         }
 

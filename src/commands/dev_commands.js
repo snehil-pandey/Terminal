@@ -79,7 +79,7 @@
         registry.register('pf', (args, stdin, ctx) => {
             const sub = args[0];
             if (!sub || sub === 'help' || sub === '--help') {
-                return ExecutionResult.ok('Panfam Programming Language (.pf) Compiler & Toolchain v2.0.0\nUsage: pf <command> [arguments]\n\nCommands:\n   run <file.pf>      Compile and execute a .pf source file\n   eval "<code>"      Execute inline .pf code statement\n   repl               Start interactive .pf read-eval-print-loop\n   check <file.pf>    Static type check and verify diagnostics\n   format <file.pf>   Format .pf source file with standard styling\n   version            Display .pf runtime version');
+                return ExecutionResult.ok('Panfam Programming Language (.pf) Compiler & Toolchain v2.0.0\nUsage: pf <command> [arguments]\n\nCommands:\n   run <file.pf>      Compile and execute a .pf source file\n   eval "<code>"      Execute inline .pf code statement\n   repl               Start interactive .pf read-eval-print-loop\n   check <file.pf>    Static type check and verify diagnostics\n   format <file.pf>   Format .pf source file (--check supported)\n   test <file.pf>     Execute automated unit tests\n   version            Display .pf runtime version');
             }
 
             if (sub === 'version') {
@@ -140,16 +140,41 @@
             }
 
             if (sub === 'format') {
-                if (!args[1]) return ExecutionResult.error('pf format: missing source file', 1);
+                const checkOnly = args.includes('--check');
+                const fileArg = args.find(a => a !== 'format' && a !== '--check');
+                if (!fileArg) return ExecutionResult.error('pf format: missing source file', 1);
                 try {
-                    const source = ctx.vfs.readFile(args[1]);
+                    const source = ctx.vfs.readFile(fileArg);
                     const Formatter = (typeof require !== 'undefined') ? require('../pf/formatter') : (root.PFFormatter || null);
                     if (!Formatter) return ExecutionResult.error('pf: formatter module not found', 1);
                     const formatted = Formatter.format(source);
-                    ctx.vfs.writeFile(args[1], formatted, ctx.user);
-                    return ExecutionResult.ok(`Formatted '${args[1]}' successfully.`);
+                    if (checkOnly) {
+                        const isFormatted = source.trim() === formatted.trim();
+                        if (isFormatted) return ExecutionResult.ok(`[CHECK PASS] '${fileArg}' is correctly formatted.`);
+                        return ExecutionResult.error(`[CHECK FAIL] '${fileArg}' violates formatting standards.`, 1);
+                    }
+                    ctx.vfs.writeFile(fileArg, formatted, ctx.user);
+                    return ExecutionResult.ok(`Formatted '${fileArg}' successfully.`);
                 } catch (e) {
                     return ExecutionResult.error(`pf format error: ${e.message}`, 1);
+                }
+            }
+
+            if (sub === 'test') {
+                if (!args[1]) return ExecutionResult.error('pf test: missing test source file', 1);
+                try {
+                    const source = ctx.vfs.readFile(args[1]);
+                    const outputLogs = [];
+                    const Interpreter = (typeof require !== 'undefined') ? require('../pf/interpreter').Interpreter : (root.PFInterpreter ? root.PFInterpreter.Interpreter : null);
+                    if (!Interpreter) return ExecutionResult.error('pf: runtime interpreter module not found', 1);
+                    const interp = new Interpreter((msg) => outputLogs.push(msg), ctx.shell ? ctx.shell.kernel : null);
+                    interp.run(source);
+                    let report = `=== Panfam Language Test Runner: ${args[1]} ===\n`;
+                    if (outputLogs.length > 0) report += outputLogs.join('\n') + '\n';
+                    report += `[TEST SUITE PASSED] All assertions completed successfully.`;
+                    return ExecutionResult.ok(report);
+                } catch (e) {
+                    return ExecutionResult.error(`pf test failure in '${args[1]}': ${e.message}`, 1);
                 }
             }
 
