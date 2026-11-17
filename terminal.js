@@ -15,9 +15,15 @@
 
         if (!screenEl || !inputEl) return;
 
+        // Obtain single authoritative system service container
+        const services = (window.PFSystemServices && window.PFSystemServices.getSystemServices)
+            ? window.PFSystemServices.getSystemServices()
+            : null;
+
         shellInstance = new window.WebTerminalShell({
             user: 'user',
-            hostname: 'panfam-terminal'
+            hostname: 'panfam-terminal',
+            services: services
         });
 
         // Update prompt label if present
@@ -45,17 +51,9 @@
             inputEl.focus();
         });
 
-        // Initialize Panfam OS Desktop Window Manager
+        // Initialize Panfam OS Desktop Window Manager with authoritative services
         if (window.PFWindowManager) {
-            window.pfWM = new window.PFWindowManager.WindowManager();
-            if (shellInstance) {
-                window.pfWM.setServices({
-                    kernel: shellInstance.kernel || null,
-                    vfs: shellInstance.vfs || null,
-                    network: shellInstance.network || null,
-                    shell: shellInstance
-                });
-            }
+            window.pfWM = new window.PFWindowManager.WindowManager(null, services);
             window.pfWM.init(document.body);
         }
 

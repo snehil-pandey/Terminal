@@ -432,103 +432,48 @@
         }
 
         launchApp(appName) {
+            const NativeApps = (typeof window !== 'undefined' && window.PFNativeApps) 
+                ? window.PFNativeApps 
+                : ((typeof require !== 'undefined') ? require('../apps/native_apps') : null);
+
             switch (appName) {
-                case 'editor':
-                    this.openWindow('PF Code Editor', `
-                        <div class="pf-app-editor">
-                            <div class="pf-editor-toolbar">
-                                <button class="pf-btn">Run .pf</button>
-                                <button class="pf-btn">Format</button>
-                                <button class="pf-btn">Check</button>
-                            </div>
-                            <textarea class="pf-editor-area" spellcheck="false">// Welcome to Panfam Language (.pf) Studio
-class Greeter {
-    init(name: String) {
-        self.name = name
-    }
-
-    greet() -> String {
-        return "Hello from Panfam OS, " + self.name
-    }
-}
-
-let g = Greeter("Developer")
-print(g.greet())</textarea>
-                        </div>
-                    `, { width: 700, height: 480 });
-                    break;
-                case 'files':
-                    this.openWindow('Virtual File Manager', `
-                        <div class="pf-app-files">
-                            <div class="pf-files-sidebar">
-                                <div>/</div>
-                                <div>/home/user</div>
-                                <div>/bin</div>
-                                <div>/etc</div>
-                                <div>/proc</div>
-                            </div>
-                            <div class="pf-files-content">
-                                <div class="pf-file-item">&#128196; main.pf</div>
-                                <div class="pf-file-item">&#128196; README.md</div>
-                                <div class="pf-file-item">&#128193; projects/</div>
-                            </div>
-                        </div>
-                    `, { width: 620, height: 400 });
-                    break;
-                case 'monitor':
-                    this.openWindow('Task & System Monitor', `
-                        <div class="pf-app-monitor">
-                            <div class="pf-mon-stat-card">
-                                <h4>Virtual CPU Utilization</h4>
-                                <div class="pf-progress-bar"><div class="pf-progress-fill" style="width: 14%;"></div></div>
-                                <span>14% active (4 vCPUs allocated)</span>
-                            </div>
-                            <div class="pf-mon-stat-card">
-                                <h4>Virtual Memory Allocation</h4>
-                                <div class="pf-progress-bar"><div class="pf-progress-fill" style="width: 28%;"></div></div>
-                                <span>1842 MiB used / 8192 MiB total</span>
-                            </div>
-                            <h4>Active Operating System Processes</h4>
-                            <table class="pf-table">
-                                <tr><th>PID</th><th>Process</th><th>State</th><th>Memory</th></tr>
-                                <tr><td>1</td><td>systemd (kernel)</td><td>RUNNING</td><td>12.5 MiB</td></tr>
-                                <tr><td>102</td><td>pfsh-daemon</td><td>SLEEP</td><td>4.2 MiB</td></tr>
-                                <tr><td>108</td><td>pf-wm (desktop)</td><td>RUNNING</td><td>18.4 MiB</td></tr>
-                            </table>
-                        </div>
-                    `, { width: 640, height: 420 });
-                    break;
-                case 'settings':
-                    this.openWindow('System Settings', `
-                        <div class="pf-app-settings">
-                            <h3>Panfam OS Configuration</h3>
-                            <label>Desktop Theme:
-                                <select class="pf-select">
-                                    <option>matrix</option>
-                                    <option>amber</option>
-                                    <option>cyberpunk</option>
-                                    <option>dracula</option>
-                                    <option>nord</option>
-                                    <option>monokai</option>
-                                    <option>solarized</option>
-                                </select>
-                            </label>
-                            <label>Default Shell:
-                                <input class="pf-input" type="text" value="/bin/pfsh" readonly />
-                            </label>
-                        </div>
-                    `, { width: 500, height: 350 });
-                    break;
+                case 'editor': {
+                    if (NativeApps && NativeApps.createCodeStudio && typeof document !== 'undefined') {
+                        const appDom = NativeApps.createCodeStudio(this.services, this);
+                        return this.openWindow('PF Code Editor', appDom, { width: 720, height: 500 });
+                    }
+                    return this.openWindow('PF Code Editor', '<div class="pf-app-editor">PF Code Studio</div>', { width: 700, height: 480 });
+                }
+                case 'files': {
+                    if (NativeApps && NativeApps.createFileManager && typeof document !== 'undefined') {
+                        const appDom = NativeApps.createFileManager(this.services, this);
+                        return this.openWindow('Virtual File Manager', appDom, { width: 660, height: 440 });
+                    }
+                    return this.openWindow('Virtual File Manager', '<div class="pf-app-files">File Manager</div>', { width: 620, height: 400 });
+                }
+                case 'monitor': {
+                    if (NativeApps && NativeApps.createTaskManager && typeof document !== 'undefined') {
+                        const appDom = NativeApps.createTaskManager(this.services, this);
+                        return this.openWindow('Task & System Monitor', appDom, { width: 680, height: 460 });
+                    }
+                    return this.openWindow('Task & System Monitor', '<div class="pf-app-monitor">System Monitor</div>', { width: 640, height: 420 });
+                }
+                case 'settings': {
+                    if (NativeApps && NativeApps.createSettings && typeof document !== 'undefined') {
+                        const appDom = NativeApps.createSettings(this.services, this);
+                        return this.openWindow('System Settings', appDom, { width: 520, height: 380 });
+                    }
+                    return this.openWindow('System Settings', '<div class="pf-app-settings">Settings</div>', { width: 500, height: 350 });
+                }
                 case 'terminal':
                 default:
-                    this.openWindow('Terminal Session', `
+                    return this.openWindow('Terminal Session', `
                         <div class="pf-app-terminal">
                             <pre>Panfam Shell (PFSH) Session
 Type 'help' or 'pf run &lt;file.pf&gt;'
 </pre>
                         </div>
                     `, { width: 650, height: 400 });
-                    break;
             }
         }
 

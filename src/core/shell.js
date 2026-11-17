@@ -38,9 +38,23 @@
         constructor(options = {}) {
             this.user = options.user || 'user';
             this.hostname = options.hostname || 'panfam-terminal';
-            this.vfs = new VirtualFileSystem();
-            this.network = new VirtualNetwork();
-            this.themeManager = new ThemeManager();
+
+            // Support injection of authoritative system services or fallback gracefully
+            if (options.services) {
+                this.services = options.services;
+                this.vfs = options.services.vfs;
+                this.network = options.services.network;
+                this.kernel = options.services.kernel;
+                this.processManager = options.services.processManager;
+                this.themeManager = options.services.themeManager || new ThemeManager();
+            } else {
+                this.vfs = options.vfs || new VirtualFileSystem();
+                this.network = options.network || new VirtualNetwork();
+                this.themeManager = options.themeManager || new ThemeManager();
+                this.kernel = options.kernel || null;
+                this.processManager = options.processManager || null;
+            }
+
             this.commands = new CommandRegistry(this);
             this.lastExitCode = 0;
 

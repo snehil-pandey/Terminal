@@ -321,6 +321,77 @@ async function runAll() {
         assert(pm.listInstalled().some(p => p.name === 'neofetch'));
     });
 
+    // 14. Unified System Services & Authoritative Container
+    test('Unified Services: Authoritative service container and cross-subsystem sharing', () => {
+        const { getSystemServices } = require('../../src/os/services');
+        const services = getSystemServices();
+
+        assert(services.kernel !== null);
+        assert(services.vfs !== null);
+        assert(services.processManager !== null);
+        assert(services.hardware !== null);
+
+        // VFS file write through services
+        services.vfs.writeFile('/home/user/app_sync_test.pf', 'let x = 99\nprint(x)', 'user');
+        assert(services.vfs.exists('/home/user/app_sync_test.pf'));
+
+        // Spawn process lifecycle
+        const logs = [];
+        const proc = services.spawnWorkerProcess('app_sync_test.pf', services.vfs.readFile('/home/user/app_sync_test.pf'), 'user', {
+            onStdout: (m) => logs.push(m)
+        });
+
+        assert(proc.pid > 0);
+        assert(logs.some(l => l.includes('99')));
+        assert.strictEqual(proc.exitCode, 0);
+    });
+
+    // 15. Process Lifecycle & Task Termination
+    test('Process Lifecycle: Process termination via kill and resource cleanup', () => {
+        const { getSystemServices } = require('../../src/os/services');
+        const services = getSystemServices();
+
+        // Spawn a background process
+        const proc = services.processManager.spawn('background-worker', 1, 'user', 20);
+        assert(services.processManager.get(proc.pid) !== null);
+
+        // Terminate process through services
+        const success = services.terminateProcess(proc.pid, 15, 'SIGTERM');
+        assert.strictEqual(success, true);
+        assert.strictEqual(services.processManager.get(proc.pid), null);
+    });
+
+    // 16. Worker Privileged Syscall Bridge Validation
+    test('Syscall Bridge: Handles authorized VFS read/write and rejects unauthorized calls', () => {
+        const { getSystemServices } = require('../../src/os/services');
+        const services = getSystemServices();
+
+        let receivedMsg = null;
+        const fakeWorker = {
+            postMessage: (m) => { receivedMsg = m; }
+        };
+
+        // Authorized fs.write
+        services.handleWorkerSyscall(101, fakeWorker, {
+            callId: 1,
+            method: 'fs.write',
+            args: ['/home/user/bridge_test.txt', 'Bridged Content']
+        }, 'user');
+
+        assert.strictEqual(receivedMsg.success, true);
+        assert.strictEqual(services.vfs.readFile('/home/user/bridge_test.txt'), 'Bridged Content');
+
+        // Unsupported/unauthorized call
+        services.handleWorkerSyscall(101, fakeWorker, {
+            callId: 2,
+            method: 'forbidden.sys.destroy',
+            args: []
+        }, 'user');
+
+        assert.strictEqual(receivedMsg.success, false);
+        assert(receivedMsg.error.includes('ENOSYS'));
+    });
+
     console.log(`\nPanfam OS Test Results: ${passed} Passed, ${failed} Failed.`);
     if (failed > 0) {
         process.exit(1);

@@ -91,6 +91,23 @@
                 try {
                     const source = ctx.vfs.readFile(args[1]);
                     const outputLogs = [];
+
+                    // If system services container is present, spawn via official ProcessManager lifecycle
+                    const services = ctx.shell && ctx.shell.services ? ctx.shell.services : null;
+                    if (services && typeof services.spawnWorkerProcess === 'function') {
+                        let execError = null;
+                        let execResult = null;
+                        const proc = services.spawnWorkerProcess(args[1], source, ctx.user, {
+                            onStdout: (msg) => outputLogs.push(msg),
+                            onComplete: (res) => { execResult = res; },
+                            onError: (err) => { execError = err; }
+                        });
+                        if (execError) {
+                            return ExecutionResult.error(`pf runtime error (PID ${proc.pid}): ${execError}`, 1);
+                        }
+                        return ExecutionResult.ok(outputLogs.join('\n'));
+                    }
+
                     const Interpreter = (typeof require !== 'undefined') ? require('../pf/interpreter').Interpreter : (root.PFInterpreter ? root.PFInterpreter.Interpreter : null);
                     if (!Interpreter) {
                         return ExecutionResult.error('pf: runtime interpreter module not found', 1);

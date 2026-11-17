@@ -60,7 +60,19 @@
         }, { description: 'Tell how long the system has been running', usage: 'uptime', category: 'System' });
 
         // ps
-        registry.register('ps', () => {
+        registry.register('ps', (args, stdin, ctx) => {
+            const pm = ctx.shell && ctx.shell.services ? ctx.shell.services.processManager : (ctx.shell ? ctx.shell.processManager : null);
+            if (pm && typeof pm.list === 'function') {
+                const procs = pm.list();
+                let out = '  PID TTY          TIME CMD\n';
+                for (const p of procs) {
+                    const pidStr = String(p.pid).padStart(5, ' ');
+                    const timeStr = '00:00:0' + Math.floor((p.cpuTimeMs || 0) / 1000);
+                    out += `${pidStr} ?        ${timeStr} ${p.name}\n`;
+                }
+                return ExecutionResult.ok(out.trimEnd());
+            }
+
             let out = '  PID TTY          TIME CMD\n';
             out += '    1 ?        00:00:01 systemd\n';
             out += '  142 ?        00:00:00 dbus-daemon\n';
@@ -68,6 +80,36 @@
             out += '  512 pts/0    00:00:00 ps';
             return ExecutionResult.ok(out);
         }, { description: 'Report a snapshot of the current processes', usage: 'ps', category: 'System' });
+
+        // kill
+        registry.register('kill', (args, stdin, ctx) => {
+            if (args.length === 0) return ExecutionResult.error('kill: usage: kill <pid>', 1);
+            const pid = parseInt(args[0], 10);
+            if (isNaN(pid)) return ExecutionResult.error(`kill: invalid pid '${args[0]}'`, 1);
+
+            const services = ctx.shell && ctx.shell.services ? ctx.shell.services : null;
+            if (services && typeof services.terminateProcess === 'function') {
+                try {
+                    const success = services.terminateProcess(pid, 0, 'SIGTERM');
+                    if (success) return ExecutionResult.ok(`Process ${pid} terminated.`);
+                    return ExecutionResult.error(`kill: (${pid}) - No such process`, 1);
+                } catch (e) {
+                    return ExecutionResult.error(`kill: ${e.message}`, 1);
+                }
+            }
+
+            const kernel = ctx.shell && ctx.shell.kernel ? ctx.shell.kernel : null;
+            if (kernel && typeof kernel.sys_kill === 'function') {
+                try {
+                    kernel.sys_kill(pid, 1, ctx.user);
+                    return ExecutionResult.ok(`Process ${pid} terminated.`);
+                } catch (e) {
+                    return ExecutionResult.error(`kill: ${e.message}`, 1);
+                }
+            }
+
+            return ExecutionResult.error(`kill: (${pid}) - Process subsystem unavailable`, 1);
+        }, { description: 'Send a signal to a process', usage: 'kill <pid>', category: 'System' });
 
         // free
         registry.register('free', (args) => {
