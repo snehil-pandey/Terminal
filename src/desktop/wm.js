@@ -18,6 +18,7 @@
             this.id = id;
             this.title = title;
             this.app = appComponent;
+            this.options = options || {};
             this.width = options.width || 680;
             this.height = options.height || 440;
             this.x = options.x !== undefined ? options.x : 80;
@@ -372,8 +373,16 @@
 
         closeWindow(id) {
             const win = this.windows.get(id);
-            if (win && win.element && win.element.parentNode) {
-                win.element.parentNode.removeChild(win.element);
+            if (win) {
+                if (typeof win.options.onBeforeClose === 'function') {
+                    const allowClose = win.options.onBeforeClose();
+                    if (allowClose === false) {
+                        return false;
+                    }
+                }
+                if (win.element && win.element.parentNode) {
+                    win.element.parentNode.removeChild(win.element);
+                }
             }
             this.windows.delete(id);
             if (this.activeWindowId === id) {
@@ -381,6 +390,7 @@
                 this.activeWindowId = remaining.length > 0 ? remaining[remaining.length - 1] : null;
                 if (this.activeWindowId) this.focusWindow(this.activeWindowId);
             }
+            return true;
         }
 
         focusWindow(id) {
@@ -431,7 +441,7 @@
             }
         }
 
-        launchApp(appName) {
+        launchApp(appName, initialArgs = {}) {
             const NativeApps = (typeof window !== 'undefined' && window.PFNativeApps) 
                 ? window.PFNativeApps 
                 : ((typeof require !== 'undefined') ? require('../apps/native_apps') : null);
@@ -439,28 +449,39 @@
             switch (appName) {
                 case 'editor': {
                     if (NativeApps && NativeApps.createCodeStudio && typeof document !== 'undefined') {
-                        const appDom = NativeApps.createCodeStudio(this.services, this);
-                        return this.openWindow('PF Code Editor', appDom, { width: 720, height: 500 });
+                        const appDom = NativeApps.createCodeStudio(this.services, this, initialArgs);
+                        const win = this.openWindow('PF Code Editor', appDom, {
+                            width: 720,
+                            height: 500,
+                            onBeforeClose: () => {
+                                if (appDom && typeof appDom.canClose === 'function') {
+                                    return appDom.canClose();
+                                }
+                                return true;
+                            }
+                        });
+                        win.appDom = appDom;
+                        return win;
                     }
                     return this.openWindow('PF Code Editor', '<div class="pf-app-editor">PF Code Studio</div>', { width: 700, height: 480 });
                 }
                 case 'files': {
                     if (NativeApps && NativeApps.createFileManager && typeof document !== 'undefined') {
-                        const appDom = NativeApps.createFileManager(this.services, this);
+                        const appDom = NativeApps.createFileManager(this.services, this, initialArgs);
                         return this.openWindow('Virtual File Manager', appDom, { width: 660, height: 440 });
                     }
                     return this.openWindow('Virtual File Manager', '<div class="pf-app-files">File Manager</div>', { width: 620, height: 400 });
                 }
                 case 'monitor': {
                     if (NativeApps && NativeApps.createTaskManager && typeof document !== 'undefined') {
-                        const appDom = NativeApps.createTaskManager(this.services, this);
+                        const appDom = NativeApps.createTaskManager(this.services, this, initialArgs);
                         return this.openWindow('Task & System Monitor', appDom, { width: 680, height: 460 });
                     }
                     return this.openWindow('Task & System Monitor', '<div class="pf-app-monitor">System Monitor</div>', { width: 640, height: 420 });
                 }
                 case 'settings': {
                     if (NativeApps && NativeApps.createSettings && typeof document !== 'undefined') {
-                        const appDom = NativeApps.createSettings(this.services, this);
+                        const appDom = NativeApps.createSettings(this.services, this, initialArgs);
                         return this.openWindow('System Settings', appDom, { width: 520, height: 380 });
                     }
                     return this.openWindow('System Settings', '<div class="pf-app-settings">Settings</div>', { width: 500, height: 350 });

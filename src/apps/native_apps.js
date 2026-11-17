@@ -17,12 +17,13 @@
     'use strict';
 
     class NativeAppRegistry {
-        static createCodeStudio(services, wm) {
+        static createCodeStudio(services, wm, options = {}) {
             const container = document.createElement('div');
             container.className = 'pf-app-editor';
 
-            let currentFilePath = '/home/user/main.pf';
+            let currentFilePath = options.filePath || '/home/user/main.pf';
             let activePid = null;
+            let isDirty = false;
 
             // Load initial content from VFS if exists
             let initialContent = `// Panfam Language (.pf) Studio
@@ -46,6 +47,7 @@ print(g.greet())`;
             container.innerHTML = `
                 <div class="pf-editor-toolbar">
                     <span class="pf-editor-file-badge" id="pf-editor-filename">${currentFilePath}</span>
+                    <span id="pf-editor-dirty-indicator" style="display:none;color:var(--term-warn);font-size:11px;font-weight:bold;">● Unsaved</span>
                     <button class="pf-btn" id="pf-btn-editor-run">&#9658; Run .pf</button>
                     <button class="pf-btn" id="pf-btn-editor-stop" style="display:none;background:#e74c3c;">&#9632; Stop</button>
                     <button class="pf-btn" id="pf-btn-editor-check">&#10003; Check</button>
@@ -61,12 +63,19 @@ print(g.greet())`;
             `;
 
             const textarea = container.querySelector('#pf-editor-textarea');
+            const fileBadge = container.querySelector('#pf-editor-filename');
+            const dirtyIndicator = container.querySelector('#pf-editor-dirty-indicator');
             const consoleEl = container.querySelector('#pf-editor-console');
             const btnRun = container.querySelector('#pf-btn-editor-run');
             const btnStop = container.querySelector('#pf-btn-editor-stop');
             const btnCheck = container.querySelector('#pf-btn-editor-check');
             const btnFormat = container.querySelector('#pf-btn-editor-format');
             const btnSave = container.querySelector('#pf-btn-editor-save');
+
+            textarea.addEventListener('input', () => {
+                isDirty = true;
+                dirtyIndicator.style.display = 'inline-block';
+            });
 
             const log = (msg, isErr = false) => {
                 const line = document.createElement('div');
@@ -76,11 +85,38 @@ print(g.greet())`;
                 consoleEl.scrollTop = consoleEl.scrollHeight;
             };
 
+            const openFile = (path) => {
+                if (isDirty) {
+                    const confirmDiscard = (typeof confirm === 'function') 
+                        ? confirm(`Current file '${currentFilePath}' has unsaved changes. Discard and open '${path}'?`)
+                        : true;
+                    if (!confirmDiscard) return false;
+                }
+                currentFilePath = path;
+                fileBadge.textContent = path;
+                try {
+                    if (services && services.vfs && services.vfs.exists(path)) {
+                        textarea.value = services.vfs.readFile(path);
+                    } else {
+                        textarea.value = '';
+                    }
+                    isDirty = false;
+                    dirtyIndicator.style.display = 'none';
+                    log(`Loaded file '${path}'.`);
+                    return true;
+                } catch (e) {
+                    log(`Error opening '${path}': ${e.message}`, true);
+                    return false;
+                }
+            };
+
             // Save to VFS
             btnSave.addEventListener('click', () => {
                 if (services && services.vfs) {
                     try {
                         services.vfs.writeFile(currentFilePath, textarea.value, 'user');
+                        isDirty = false;
+                        dirtyIndicator.style.display = 'none';
                         log(`Saved '${currentFilePath}' successfully.`);
                     } catch (e) {
                         log(`Save error: ${e.message}`, true);
@@ -148,6 +184,18 @@ print(g.greet())`;
                 }
             });
 
+            container.openFile = openFile;
+            container.getCurrentFile = () => currentFilePath;
+            container.isDirty = () => isDirty;
+            container.canClose = () => {
+                if (isDirty) {
+                    if (typeof confirm === 'function') {
+                        return confirm(`File '${currentFilePath}' has unsaved changes. Close anyway?`);
+                    }
+                }
+                return true;
+            };
+
             return container;
         }
 
@@ -165,9 +213,12 @@ print(g.greet())`;
                     <div class="pf-progress-bar"><div class="pf-progress-fill" id="pf-mon-mem-bar" style="width: 22%;"></div></div>
                 </div>
 
-                <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;">
-                    <h4>Live Operating System Processes</h4>
-                    <button class="pf-btn" id="pf-btn-task-refresh">&#8635; Refresh</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;gap:8px;">
+                    <h4 style="margin:0;">Live Operating System Processes</h4>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <input type="text" id="pf-task-filter" placeholder="Filter processes..." style="background:rgba(0,0,0,0.4);border:1px solid var(--term-border);color:var(--term-fg);padding:3px 8px;border-radius:4px;font-size:11px;" />
+                        <button class="pf-btn" id="pf-btn-task-refresh">&#8635; Refresh</button>
+                    </div>
                 </div>
 
                 <table class="pf-table" id="pf-task-table">
@@ -183,10 +234,12 @@ print(g.greet())`;
             const memText = container.querySelector('#pf-mon-mem-text');
             const memBar = container.querySelector('#pf-mon-mem-bar');
             const btnRefresh = container.querySelector('#pf-btn-task-refresh');
+            const filterInput = container.querySelector('#pf-task-filter');
 
             const refresh = () => {
                 if (!services || !services.processManager) return;
                 const procs = services.processManager.list();
+                const query = filterInput ? filterInput.value.toLowerCase().trim() : '';
                 tbody.innerHTML = '';
 
                 // Telemetry
@@ -202,7 +255,11 @@ print(g.greet())`;
                     }
                 }
 
-                procs.forEach(p => {
+                const filtered = query 
+                    ? procs.filter(p => p.name.toLowerCase().includes(query) || String(p.pid).includes(query) || p.user.toLowerCase().includes(query))
+                    : procs;
+
+                filtered.forEach(p => {
                     const tr = document.createElement('tr');
                     const memMb = (p.memoryBytes / (1024 * 1024)).toFixed(1);
                     tr.innerHTML = `
@@ -232,6 +289,7 @@ print(g.greet())`;
                 });
             };
 
+            filterInput.addEventListener('input', refresh);
             btnRefresh.addEventListener('click', refresh);
             refresh();
             const interval = setInterval(refresh, 2000);
@@ -256,9 +314,10 @@ print(g.greet())`;
                     <div class="pf-nav-item" data-path="/proc">&#128202; /proc</div>
                 </div>
                 <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
-                    <div style="display:flex;gap:8px;align-items:center;">
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                         <span id="pf-files-path-bar" style="font-weight:bold;color:var(--term-path);">${currentPath}</span>
-                        <div style="margin-left:auto;display:flex;gap:6px;">
+                        <input type="text" id="pf-files-filter" placeholder="Search in folder..." style="background:rgba(0,0,0,0.4);border:1px solid var(--term-border);color:var(--term-fg);padding:3px 8px;border-radius:4px;font-size:11px;margin-left:auto;" />
+                        <div style="display:flex;gap:6px;">
                             <button class="pf-btn" id="pf-btn-files-mkdir">+ Folder</button>
                             <button class="pf-btn" id="pf-btn-files-touch">+ File</button>
                         </div>
@@ -270,6 +329,7 @@ print(g.greet())`;
             const grid = container.querySelector('#pf-files-grid');
             const pathBar = container.querySelector('#pf-files-path-bar');
             const navItems = container.querySelectorAll('.pf-nav-item');
+            const filterInput = container.querySelector('#pf-files-filter');
             const btnMkdir = container.querySelector('#pf-btn-files-mkdir');
             const btnTouch = container.querySelector('#pf-btn-files-touch');
 
@@ -279,9 +339,13 @@ print(g.greet())`;
                 grid.innerHTML = '';
                 if (!services || !services.vfs) return;
 
+                const query = filterInput ? filterInput.value.toLowerCase().trim() : '';
+
                 try {
                     const entries = services.vfs.readDir(currentPath);
-                    entries.forEach(e => {
+                    const filtered = query ? entries.filter(e => e.name.toLowerCase().includes(query)) : entries;
+
+                    filtered.forEach(e => {
                         const item = document.createElement('div');
                         item.className = 'pf-file-item';
                         item.style.padding = '10px';
@@ -300,6 +364,19 @@ print(g.greet())`;
                             if (e.type === 'dir') {
                                 const next = currentPath === '/' ? `/${e.name}` : `${currentPath}/${e.name}`;
                                 renderFolder(next);
+                            } else {
+                                // Open file in Code Studio
+                                const fullPath = currentPath === '/' ? `/${e.name}` : `${currentPath}/${e.name}`;
+                                if (wm && typeof wm.launchApp === 'function') {
+                                    // Check if editor window already exists
+                                    let editorWin = Array.from(wm.windows.values()).find(w => w.title.includes('Editor') && w.appDom);
+                                    if (editorWin && editorWin.appDom && typeof editorWin.appDom.openFile === 'function') {
+                                        wm.focusWindow(editorWin.id);
+                                        editorWin.appDom.openFile(fullPath);
+                                    } else {
+                                        wm.launchApp('editor', { filePath: fullPath });
+                                    }
+                                }
                             }
                         });
 
@@ -309,6 +386,8 @@ print(g.greet())`;
                     grid.innerHTML = `<div style="color:var(--term-error);">Error: ${err.message}</div>`;
                 }
             };
+
+            filterInput.addEventListener('input', () => renderFolder(currentPath));
 
             navItems.forEach(n => {
                 n.addEventListener('click', (e) => {
