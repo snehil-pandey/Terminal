@@ -12,22 +12,25 @@
 <body>
     <canvas id="matrix-canvas"></canvas>
 
-    <div id="content">
-        <!-- Live Terminal Stream Output -->
-        <p id="out"></p>
-        <!-- Active Command Input Prompt -->
-        <div id="input-line">
-            <span id="prompt-label"></span>
-            <input 
-                id="user-input" 
-                type="text" 
-                spellcheck="false" 
-                autocomplete="off" 
-                autocorrect="off" 
-                autocapitalize="off" 
-                aria-label="Terminal command prompt" 
-                autofocus
-            />
+    <!-- Master Viewport Container with Integrated Clean Scrollbar -->
+    <div id="terminal-container">
+        <div id="content">
+            <!-- Live Terminal Stream Output -->
+            <p id="out"></p>
+            <!-- Active Command Input Prompt -->
+            <div id="input-line">
+                <span id="prompt-label"></span>
+                <input 
+                    id="user-input" 
+                    type="text" 
+                    spellcheck="false" 
+                    autocomplete="off" 
+                    autocorrect="off" 
+                    autocapitalize="off" 
+                    aria-label="Terminal command prompt" 
+                    autofocus
+                />
+            </div>
         </div>
     </div>
 

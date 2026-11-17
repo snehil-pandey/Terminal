@@ -347,8 +347,17 @@
             this.outputContainer.appendChild(span);
 
             if (this.inputElement && typeof window !== 'undefined') {
+                const termContainer = document.getElementById('terminal-container');
                 const inputLine = document.getElementById('input-line') || this.inputElement;
-                if (inputLine.getBoundingClientRect) {
+                if (termContainer && inputLine.getBoundingClientRect && termContainer.getBoundingClientRect) {
+                    const cRect = termContainer.getBoundingClientRect();
+                    const iRect = inputLine.getBoundingClientRect();
+                    const targetScroll = termContainer.scrollTop + (iRect.top - cRect.top) - (cRect.height * 0.42);
+                    termContainer.scrollTo({
+                        top: Math.max(0, targetScroll),
+                        behavior: 'smooth'
+                    });
+                } else if (inputLine.getBoundingClientRect) {
                     const rect = inputLine.getBoundingClientRect();
                     const targetY = window.innerHeight * 0.42;
                     const scrollOffset = rect.top + window.scrollY - targetY;

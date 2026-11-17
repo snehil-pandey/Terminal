@@ -14,6 +14,29 @@
 })(typeof self !== 'undefined' ? self : this, function (Security, ExecutionResult) {
     'use strict';
 
+    function formatEntry(node, isDir, linkStr = '') {
+        const name = node.name;
+        if (isDir) {
+            return `<c class="pf-node-dir">${Security.escapeHtml(name)}/</c>`;
+        }
+        if (node.type === 'symlink') {
+            return `<span class="pf-node-symlink">${Security.escapeHtml(name)}</span>${linkStr}`;
+        }
+        if (node.permissions && node.permissions.includes('x')) {
+            return `<g class="pf-node-exec">${Security.escapeHtml(name)}*</g>`;
+        }
+        if (/\.(zip|tar|gz|bz2|xz|7z)$/i.test(name)) {
+            return `<span class="pf-node-archive">${Security.escapeHtml(name)}</span>`;
+        }
+        if (/\.(pf|js|py|sh|json|html|css|md|txt)$/i.test(name)) {
+            return `<span class="pf-node-code">${Security.escapeHtml(name)}</span>`;
+        }
+        if (/\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(name)) {
+            return `<span class="pf-node-image">${Security.escapeHtml(name)}</span>`;
+        }
+        return `<w class="pf-node-file">${Security.escapeHtml(name)}</w>`;
+    }
+
     function registerFsCommands(registry) {
         // pwd
         registry.register('pwd', (args, stdin, ctx) => {
@@ -66,18 +89,19 @@
                 if (longFormat) {
                     let out = `total ${children.length}\n`;
                     if (showAll) {
-                        out += `drwxr-xr-x 2 ${node.owner} ${node.group}  4096 ${node.modified.slice(0, 10)} .\ndrwxr-xr-x 4 root root  4096 ${node.modified.slice(0, 10)} ..\n`;
+                        out += `drwxr-xr-x 2 ${node.owner} ${node.group}  4096 ${node.modified.slice(0, 10)} <c class="pf-node-dir">./</c>\ndrwxr-xr-x 4 root root  4096 ${node.modified.slice(0, 10)} <c class="pf-node-dir">../</c>\n`;
                     }
                     for (const item of children) {
                         const isDir = item.type === 'dir';
                         const isLink = item.type === 'symlink';
                         const size = isDir ? 4096 : (item.content ? item.content.length : (item.target ? item.target.length : 0));
-                        const linkStr = isLink ? ` -> ${item.target}` : '';
-                        out += `${item.permissions} 1 ${item.owner} ${item.group} ${String(size).padStart(5)} ${item.modified.slice(0, 10)} ${item.name}${isDir ? '/' : ''}${linkStr}\n`;
+                        const linkStr = isLink ? ` -> <span class="pf-node-symlink">${Security.escapeHtml(item.target)}</span>` : '';
+                        const formatted = formatEntry(item, isDir, linkStr);
+                        out += `${item.permissions} 1 ${item.owner} ${item.group} ${String(size).padStart(5)} ${item.modified.slice(0, 10)} ${formatted}\n`;
                     }
                     return ExecutionResult.ok(out.trimEnd());
                 } else {
-                    const items = children.map(item => item.name + (item.type === 'dir' ? '/' : ''));
+                    const items = children.map(item => formatEntry(item, item.type === 'dir'));
                     return ExecutionResult.ok(items.join('   '));
                 }
             } catch (e) {

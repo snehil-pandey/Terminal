@@ -23,13 +23,14 @@
 
 html, body {
     width: 100%;
-    min-height: 100vh;
+    height: 100%;
+    margin: 0;
+    padding: 0;
     background-color: var(--term-bg);
     color: var(--term-fg);
     font-size: 15px;
     line-height: 1.45;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden; /* Hide browser root scrollbar */
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -45,12 +46,38 @@ html, body {
     opacity: 0.8;
 }
 
-/* Content container matching original layout with bottom padding to keep prompt in upper half */
+/* Master Viewport Container: houses the scrollable terminal stream cleanly */
+#terminal-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--term-border) transparent;
+}
+
+/* Custom terminal scrollbar (subtle, integrated, non-intrusive) */
+#terminal-container::-webkit-scrollbar {
+    width: 6px;
+}
+#terminal-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+#terminal-container::-webkit-scrollbar-thumb {
+    background: var(--term-border);
+    border-radius: 3px;
+}
+#terminal-container::-webkit-scrollbar-thumb:hover {
+    background: var(--term-prompt);
+}
+
+/* Content container with padding to keep prompt comfortable */
 #content {
     position: relative;
     z-index: 2;
     padding: 16px 20px calc(52vh + 40px) 20px;
-    min-height: 100vh;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -135,6 +162,71 @@ iv {
 lsk {
     letter-spacing: 0px;
     font-family: Consolas, monospace;
+}
+
+/* File and Node Type Styling */
+.pf-node-dir, dir {
+    color: var(--term-path);
+    font-weight: bold;
+}
+
+.pf-node-exec, exec {
+    color: var(--term-prompt);
+    font-weight: bold;
+}
+
+.pf-node-symlink, symlink {
+    color: #00e5ff;
+    font-style: italic;
+}
+
+.pf-node-archive, archive {
+    color: #e06c75;
+}
+
+.pf-node-code, codefile {
+    color: #e5c07b;
+}
+
+.pf-node-image, imgfile {
+    color: #d19a66;
+}
+
+.pf-node-file, file {
+    color: var(--term-fg);
+}
+
+.pf-tag-badge {
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.pf-tag-root {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.pf-tag-user {
+    background: var(--term-user);
+    color: #000;
+}
+
+.pf-tag-info {
+    background: var(--term-info);
+    color: #000;
+}
+
+.pf-tag-warn {
+    background: var(--term-warn);
+    color: #000;
+}
+
+.pf-tag-error {
+    background: var(--term-error);
+    color: #fff;
 }
 
 ::selection {
