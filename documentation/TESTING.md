@@ -1,37 +1,44 @@
-# Panfam-Terminal Test Documentation & Methodology
+# Panfam OS & .pf Test Documentation & Methodology
 
-**Test Harness:** Node.js Standalone Runner  
-**File:** [test_suite.js](../tests/test_suite.js)  
+**Test Harness:** Unified Automated Runner ([`../tests/run_all_tests.js`](../tests/run_all_tests.js))  
+**POSiX & CLI Test File:** [`../tests/test_suite.js`](../tests/test_suite.js)  
+**OS Core, .pf Engine & E2E File:** [`../tests/os/os_test_suite.js`](../tests/os/os_test_suite.js)  
 **Security Reference:** [SECURITY.md](./SECURITY.md)  
-**Command Reference:** [COMMAND_REFERENCE.md](./COMMAND_REFERENCE.md)  
-**Changelog:** [CHANGELOG.md](../CHANGELOG.md)
+**Architecture Reference:** [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 
-## 1. Test Architecture
+## 1. Test Architecture & Coverage Layers
 
-The Panfam-Terminal test suite covers seven testing tiers:
+The test suite validates the full browser operating environment across 8 critical tiers:
 
-1. **Security & Sanitization**: HTML entity escaping, null byte stripping, traversal prevention, protocol guards.
-2. **POSIX Lexer**: Tokenization of single quotes, double quotes, escapes, operators (`&&`, `||`, `;`, `|`, `<`, `>`, `>>`, `2>`).
-3. **AST Parser**: Verification of command nodes, pipeline trees, and binary operator precedence.
-4. **Virtual File System**: Inode integrity, `/proc` dynamic synthetic files, symbolic link resolution, loop protection, and permission manipulation.
-5. **Virtual Network**: Interface statistics, routing tables, and DNS resolution with `/etc/hosts` integration.
-6. **Shell Pipeline & Redirection**: Execution of chained commands (`&&`, `||`), multi-stage pipelines (`|`), input redirection (`<`), and output redirection (`>`).
-7. **Themes & Developer Tools**: Theme palette validation and simulated `git` repository workflows.
+1. **Security & Sanitization**: Strict HTML entity escaping, null byte stripping, traversal prevention, protocol guards.
+2. **POSIX Shell & AST**: Tokenization, pipeline trees (`|`), logical chaining (`&&`, `||`), redirections (`<`, `>`, `>>`, `2>`).
+3. **Virtual File System & Storage**: Inode structure, synthetic `/proc` endpoints, symlink resolution, loop detection, and backup import integrity validation (`validateAndImport`).
+4. **Virtual Network**: Interface inspection (`lo`, `eth0`), routing tables, and DNS resolution with `/etc/hosts`.
+5. **Virtual Hardware & Kernel**: Multi-core scheduler utilization, memory controller quotas, syscall boundary, and audit logging.
+6. **.pf Language Engine**: Static type checking, cyclic inheritance validation, interface contracts, exception propagation (`try`/`catch`/`finally`), standard library modules, and code formatter idempotence.
+7. **Process Lifecycle & Worker RPC Bridge**: Process creation, tracking, authorized SIGTERM/SIGKILL termination, and privilege enforcement.
+8. **End-to-End System Integration & Benchmarking**: Cross-subsystem VFS sharing (Shell + Code Studio + File Manager), process tracking, and benchmark latency measurements.
 
 ---
 
 ## 2. Running Automated Tests
 
-Run the test suite with:
+Run the complete test suite with:
 
 ```bash
-node tests/test_suite.js
+node tests/run_all_tests.js
 ```
 
-### Verified Output
+### Verified Test Results (40/40 Passing - 100% Pass Rate)
+
 ```text
+====================================================
+       PANFAM OS & .PF COMPLETE TEST RUNNER         
+====================================================
+
+>>> [1/2] Executing POSIX Shell, VFS & Commands Suite:
 === Running Panfam-Terminal Automated Test Suite ===
 [PASS] Security: escapeHtml properly sanitizes dangerous characters
 [PASS] Security: sanitizeInput strips null bytes and non-printable control chars
@@ -53,4 +60,35 @@ node tests/test_suite.js
 [PASS] Dev: git commands (init, status, branch, commit)
 
 Automated Test Results: 18 Passed, 0 Failed.
+
+>>> [2/2] Executing Panfam OS Core & .pf Language Suite:
+=== Running Panfam OS & .pf Language Test Suite ===
+[PASS] OS Hardware: CPU utilization & Memory allocation accounting
+[PASS] OS Process: Spawn, state transitions and termination
+[PASS] OS Kernel: Syscall dispatch and audit logging
+[PASS] PF Language Lexer: Tokenizes classes, methods, and expressions
+[PASS] PF Language Parser: Builds AST for classes, functions, and return statements
+[PASS] PF Language Interpreter: Function evaluation and math operations
+[PASS] PF Language Interpreter: Object-Oriented Class instantiation & methods
+[PASS] Desktop WM: Window creation, focus management, and minimization
+[PASS] Desktop WM: Workspace switching and window coordinates
+[PASS] PF Language: Class inheritance, method overriding, and super calls
+[PASS] PF Language: Try, catch, throw, and finally semantics
+[PASS] PF Language: Static Type Checker validates types and catches mismatches
+[PASS] PF Language: Standard Library namespaces (std.string, std.collections, std.math)
+[PASS] PF Language: Formatter formats code deterministically
+[PASS] Package Manager: Install, list, and verify packages
+[PASS] Unified Services: Authoritative service container and cross-subsystem sharing
+[PASS] Process Lifecycle: Process termination via kill and resource cleanup
+[PASS] Syscall Bridge: Handles authorized VFS read/write and rejects unauthorized calls
+[PASS] Syscall Bridge: Enforces permissions and rejects cross-user kill attempts
+[PASS] Storage & VFS: Validates backup integrity and rejects corrupted trees
+[PASS] End-to-End: Unified VFS shared between Shell, Native Apps, and .pf Engine
+[PASS] Performance: Measures VFS, AST Parser, and Syscall Latency
+
+Panfam OS Test Results: 22 Passed, 0 Failed.
+
+====================================================
+ ALL 40 TESTS PASSED SUCCESSFULLY! (100% Pass Rate) 
+====================================================
 ```

@@ -1,52 +1,71 @@
-# Panfam-Terminal Security Architecture & Threat Model
+# Panfam OS Security Architecture & Threat Model (v4.0)
 
-**Status:** Production Grade  
-**Version:** 3.0.0  
-**Security Classification:** Strict Browser-Sandboxed Virtual CLI
+**Status:** Hardened Production Grade  
+**Version:** 4.0.0  
+**Security Classification:** Strict Browser-Sandboxed Virtual Operating Environment  
+**Related Documents:** [ARCHITECTURE.md](./ARCHITECTURE.md) | [LANGUAGE_SPECIFICATION.md](./LANGUAGE_SPECIFICATION.md) | [TESTING.md](./TESTING.md)
 
 ---
 
-## 1. Trust Boundaries
+## 1. System Trust Boundaries
 
 ```text
-[ Browser Host / Host OS ]
+[ Browser Host / Host Operating System ]
         ▲
-        │  [ STRICT BOUNDARY - No Node child_process, No eval(), No local filesystem ]
+        │  [ STRICT BOUNDARY - No Node child_process, No eval(), No native filesystem ]
         ▼
-[ Panfam-Terminal Execution Sandbox ]
-   ├── TerminalSecurity ([security.js](../src/core/security.js))
-   ├── POSIX Lexer & Parser ([lexer.js](../src/core/lexer.js), [parser.js](../src/core/parser.js))
-   ├── Virtual File System ([vfs.js](../src/fs/vfs.js)) & Storage ([storage.js](../src/core/storage.js))
-   ├── Virtual Network Subsystem ([network.js](../src/net/network.js))
-   └── Command Registries ([registry.js](../src/commands/registry.js))
+[ Panfam OS (PFOS) Privileged System Core ]
+   ├── PFKernel & Syscall Guard ([kernel.js](../src/os/kernel.js))
+   ├── ProcessManager & Quota Accounting ([process.js](../src/os/process.js))
+   ├── VirtualFileSystem & Inode Controller ([vfs.js](../src/fs/vfs.js))
+   └── SystemServiceContainer & Syscall Dispatcher ([services.js](../src/os/services.js))
+        ▲
+        │  [ ISOLATED MESSAGE RPC BRIDGE (Worker onmessage / postMessage) ]
+        ▼
+[ Isolated Execution Boundary ]
+   ├── .pf Web Worker Engine ([worker.js](../src/pf/worker.js))
+   ├── PF Code Studio ([native_apps.js](../src/apps/native_apps.js))
+   └── Unprivileged Userland Programs
 ```
 
-1. **Host Isolation**: The terminal executes entirely in the client-side JavaScript sandbox. It has zero capability to interact with, invoke, or modify the host operating system, files, or hardware.
-2. **Network Isolation**: All networking commands (`ping`, `ifconfig`, `ip`, `dig`, `ss`) query the internal `VirtualNetwork` state. Real HTTP operations via `curl` are limited to `http:` and `https:`, run through browser CORS, and strictly sanitize all downloaded payloads.
+1. **Host Isolation**: The entire operating environment executes strictly in the client-side JavaScript sandbox. It has zero capability to interact with, invoke, or modify the host operating system, local files, or hardware.
+2. **Worker RPC Boundary**: User `.pf` programs execute in dedicated Web Workers. Workers possess no direct JavaScript reference or prototype handle to `PFKernel`, `VirtualFileSystem`, or `ProcessManager`. All interactions must pass through structured JSON messages (`postMessage`) validated by `SystemServiceContainer.handleWorkerSyscall`.
 
 ---
 
 ## 2. Threat Scenarios & Mitigations
 
-### 2.1 Cross-Site Scripting (XSS) & DOM Injection
-- **Threat**: Malicious user inputs or files containing `<script>` or event handlers executed in DOM.
-- **Mitigation**: All stdout, stderr, and prompt strings pass through `TerminalSecurity.escapeHtml` (`&`, `<`, `>`, `"`, `'`, `` ` ``) before rendering. No untrusted input is ever passed to `innerHTML` without explicit entity encoding.
+### 2.1 Syscall Forgery & Unauthorized Elevation
+- **Threat**: A worker script attempts to terminate another user's process or write to system paths (`/bin`, `/etc`).
+- **Mitigation**:
+  - Permissions are strictly enforced **on the kernel side** (`kernel.js`), never trusted to the worker.
+  - `sys_kill` verifies the process owner UID: non-root users attempting to terminate other processes receive `EPERM: Operation not permitted` and an audit entry is logged.
+  - Syscall arguments are validated against strict type, length (max 1024 chars for paths), and payload quotas (max 5MB file write ceiling).
 
-### 2.2 Directory Traversal Attacks
-- **Threat**: Accessing unauthorized path nodes or escaping virtual root via `../../`.
-- **Mitigation**: `TerminalSecurity.isValidNodeName` rejects `..`, `.`, `/`, `\`, and null bytes (`\0`). All path lookups are resolved against the canonical directory tree.
+### 2.2 Terminated Worker / Zombie RPC Attacks
+- **Threat**: A worker terminated via SIGTERM/SIGKILL attempts to send subsequent syscall messages to modify storage.
+- **Mitigation**: `handleWorkerSyscall` checks `this.processManager.get(pid)`. If the process has been terminated or no longer exists in the authoritative table, the RPC is rejected immediately with `ESRCH: Process has terminated`.
 
-### 2.3 Symbolic Link Recursion & Loop Denial-of-Service
-- **Threat**: Circular symlinks (`A -> B -> A`) freezing browser event loops.
-- **Mitigation**: `VirtualFileSystem.resolvePathWithSymlinks` enforces a hard recursion limit of `MAX_SYMLINK_DEPTH = 16`, throwing a controlled error on detected loops.
+### 2.3 Backup Import Corruption & Path Traversal Attacks
+- **Threat**: An attacker feeds a crafted JSON backup containing `..` path traversal sequences, duplicate inodes, or circular directory hierarchies.
+- **Mitigation**: `vfs.validateAndImport(data)` recursively validates every imported node:
+  - Rejects traversal characters (`..`, `.`, empty names, `/`, `\`).
+  - Enforces a maximum hierarchy depth of 32 levels.
+  - Enforces a hard ceiling of 5,000 nodes (`ENOSPC`).
+  - Detects duplicate inodes and reallocates them deterministically.
 
-### 2.4 Command Injection & Shell Arbitrary Code Execution
-- **Threat**: Exploiting shell syntax to invoke `eval()`, `new Function()`, or browser internals.
-- **Mitigation**: Complete absence of `eval()` or dynamic script evaluation. All commands are dispatched via an explicit, typed `CommandRegistry` map with rigid parameter bounds.
+### 2.4 Cross-Site Scripting (XSS) & DOM Injection
+- **Threat**: File names, prompt outputs, or error messages attempting HTML injection.
+- **Mitigation**:
+  - All outputs pass through `TerminalSecurity.escapeHtml` or `TerminalSecurity.sanitizeHtml`.
+  - Disallows `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, `<input>`, `<button>`, `<style>`, `<link>`, and inline event handlers (`onload`, `onclick`, `onerror`).
 
-### 2.5 Storage Quota & Cookie Exhaustion
-- **Threat**: Malformed or oversized files causing cookie eviction and data corruption.
-- **Mitigation**: Layered persistence architecture uses IndexedDB as primary bulk store, localStorage for configuration, and keeps cookies strictly under a 3.5KB safety ceiling. Full backup export/import allows disaster recovery.
+### 2.5 Infinite Loops & Resource Exhaustion
+- **Threat**: Malicious `.pf` code with infinite loops (`while true {}`) freezing the browser tab.
+- **Mitigation**:
+  - Web Workers isolate CPU utilization away from the main UI browser thread.
+  - Watchdog timeouts (default 10s) automatically trigger SIGKILL, terminating the worker instance and freeing all allocated virtual hardware memory.
+  - Tree-walk interpreter maintains an instruction step guard (50,000 iterations ceiling per block).
 
 ---
 

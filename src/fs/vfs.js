@@ -549,6 +549,62 @@
             this.cwd = '/home/user';
             this.save();
         }
+
+        /**
+         * Validates and imports a foreign filesystem tree safely
+         * Guards against malformed structures, path traversal, circular references, and corrupted nodes.
+         */
+        validateAndImport(treeData) {
+            if (!treeData || typeof treeData !== 'object') {
+                throw new Error('Invalid backup: Root payload must be a valid JSON object');
+            }
+            const rootNode = treeData.vfs || treeData;
+            if (!rootNode || rootNode.type !== 'dir' || typeof rootNode.children !== 'object') {
+                throw new Error('Invalid backup: Missing valid root directory node');
+            }
+
+            // Inode tracking and recursion safety check
+            const seenInodes = new Set();
+            let totalNodes = 0;
+
+            function validateSubtree(node, depth = 0) {
+                if (depth > 32) throw new Error('E2BIG: Hierarchy exceeds maximum allowable depth');
+                if (++totalNodes > 5000) throw new Error('ENOSPC: File count exceeds storage limit (5000 max nodes)');
+
+                if (!node || typeof node !== 'object') throw new Error('Corrupt node encountered');
+                if (typeof node.name !== 'string' || node.name.length > 255) throw new Error('Invalid node name');
+                if (['..', '.', ''].includes(node.name) && depth > 0) throw new Error('Path traversal sequence detected in node name');
+
+                if (node.inode) {
+                    if (seenInodes.has(node.inode)) {
+                        node.inode = 2000 + totalNodes; // Reassign duplicate inode safely
+                    }
+                    seenInodes.add(node.inode);
+                }
+
+                if (node.type === 'dir') {
+                    if (!node.children || typeof node.children !== 'object') {
+                        node.children = {};
+                    }
+                    for (const childName of Object.keys(node.children)) {
+                        validateSubtree(node.children[childName], depth + 1);
+                    }
+                } else if (node.type === 'file') {
+                    if (typeof node.content !== 'string') {
+                        node.content = String(node.content || '');
+                    }
+                } else if (node.type === 'symlink') {
+                    if (typeof node.target !== 'string' || node.target.length > 512) {
+                        throw new Error('Invalid symlink target');
+                    }
+                }
+            }
+
+            validateSubtree(rootNode, 0);
+            this.root = rootNode;
+            this.save();
+            return { success: true, importedNodes: totalNodes };
+        }
     }
 
     return VirtualFileSystem;

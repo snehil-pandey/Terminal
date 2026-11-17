@@ -430,8 +430,12 @@ print(g.greet())`;
                         reader.onload = (evt) => {
                             try {
                                 const parsed = JSON.parse(evt.target.result);
-                                if (parsed && parsed.vfs && services && services.vfs) {
+                                if (services && services.vfs && typeof services.vfs.validateAndImport === 'function') {
+                                    const res = services.vfs.validateAndImport(parsed);
+                                    statusEl.textContent = `Backup validated & restored successfully (${res.importedNodes} nodes).`;
+                                } else if (parsed && parsed.vfs && services && services.vfs) {
                                     services.vfs.root = parsed.vfs;
+                                    services.vfs.save();
                                     statusEl.textContent = 'Backup restored into VFS successfully.';
                                 }
                             } catch (err) {

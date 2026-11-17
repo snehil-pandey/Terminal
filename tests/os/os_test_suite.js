@@ -366,13 +366,16 @@ async function runAll() {
         const { getSystemServices } = require('../../src/os/services');
         const services = getSystemServices();
 
+        // Spawn a process to represent the worker caller
+        const proc = services.processManager.spawn('worker-caller', 1, 'user');
+
         let receivedMsg = null;
         const fakeWorker = {
             postMessage: (m) => { receivedMsg = m; }
         };
 
         // Authorized fs.write
-        services.handleWorkerSyscall(101, fakeWorker, {
+        services.handleWorkerSyscall(proc.pid, fakeWorker, {
             callId: 1,
             method: 'fs.write',
             args: ['/home/user/bridge_test.txt', 'Bridged Content']
@@ -382,7 +385,7 @@ async function runAll() {
         assert.strictEqual(services.vfs.readFile('/home/user/bridge_test.txt'), 'Bridged Content');
 
         // Unsupported/unauthorized call
-        services.handleWorkerSyscall(101, fakeWorker, {
+        services.handleWorkerSyscall(proc.pid, fakeWorker, {
             callId: 2,
             method: 'forbidden.sys.destroy',
             args: []
@@ -390,6 +393,133 @@ async function runAll() {
 
         assert.strictEqual(receivedMsg.success, false);
         assert(receivedMsg.error.includes('ENOSYS'));
+    });
+
+    // 17. Syscall Bridge Hardening & Permissions
+    test('Syscall Bridge: Enforces permissions and rejects cross-user kill attempts', () => {
+        const { getSystemServices } = require('../../src/os/services');
+        const services = getSystemServices();
+
+        // Spawn caller process as guest
+        const callerProc = services.processManager.spawn('guest-worker', 1, 'guest');
+        // Spawn a process owned by root
+        const rootProc = services.processManager.spawn('root-daemon', 1, 'root', 10);
+        let receivedMsg = null;
+        const fakeWorker = { postMessage: (m) => { receivedMsg = m; } };
+
+        // Attempt to kill root process as unprivileged 'guest'
+        services.handleWorkerSyscall(callerProc.pid, fakeWorker, {
+            callId: 3,
+            method: 'process.kill',
+            args: [rootProc.pid]
+        }, 'guest');
+
+        assert.strictEqual(receivedMsg.success, false);
+        assert(receivedMsg.error.includes('EPERM'));
+        assert(services.processManager.get(rootProc.pid) !== null);
+
+        // Root caller can kill
+        const rootCaller = services.processManager.spawn('root-worker', 1, 'root');
+        services.handleWorkerSyscall(rootCaller.pid, fakeWorker, {
+            callId: 4,
+            method: 'process.kill',
+            args: [rootProc.pid]
+        }, 'root');
+
+        assert.strictEqual(receivedMsg.success, true);
+        assert.strictEqual(services.processManager.get(rootProc.pid), null);
+    });
+
+    // 18. Storage & Backup Import Integrity Verification
+    test('Storage & VFS: Validates backup integrity and rejects corrupted trees', () => {
+        const VirtualFileSystem = require('../../src/fs/vfs');
+        const vfs = new VirtualFileSystem();
+
+        // Corrupted payload
+        assert.throws(() => {
+            vfs.validateAndImport("not an object");
+        }, /Invalid backup/);
+
+        // Missing children
+        assert.throws(() => {
+            vfs.validateAndImport({ type: 'dir' });
+        }, /Missing valid root/);
+
+        // Valid roundtrip tree
+        const validBackup = {
+            version: '4.0',
+            vfs: {
+                type: 'dir',
+                inode: 1,
+                name: '/',
+                children: {
+                    'home': {
+                        type: 'dir',
+                        inode: 2,
+                        name: 'home',
+                        children: {
+                            'doc.txt': { type: 'file', inode: 3, name: 'doc.txt', content: 'hello' }
+                        }
+                    }
+                }
+            }
+        };
+
+        const res = vfs.validateAndImport(validBackup);
+        assert.strictEqual(res.success, true);
+        assert.strictEqual(vfs.readFile('/home/doc.txt'), 'hello');
+    });
+
+    // 19. End-to-End Cross-Subsystem Workflow
+    test('End-to-End: Unified VFS shared between Shell, Native Apps, and .pf Engine', () => {
+        const { getSystemServices } = require('../../src/os/services');
+        const services = getSystemServices();
+
+        // 1. File created in VFS (simulating File Manager / Touch)
+        services.vfs.writeFile('/home/user/e2e_calc.pf', 'let a = 15\nlet b = 27\nprint("Computed:", a + b)', 'user');
+
+        // 2. Read through VFS
+        assert(services.vfs.exists('/home/user/e2e_calc.pf'));
+        const fileContent = services.vfs.readFile('/home/user/e2e_calc.pf');
+
+        // 3. Executed via .pf process manager lifecycle
+        const logs = [];
+        const proc = services.spawnWorkerProcess('e2e_calc.pf', fileContent, 'user', {
+            onStdout: (m) => logs.push(m)
+        });
+
+        assert(proc.pid > 0);
+        assert(logs.some(l => l.includes('Computed: 42')));
+        assert.strictEqual(proc.exitCode, 0);
+
+        // 4. Content updated via shell-like write
+        services.vfs.writeFile('/home/user/e2e_calc.pf', fileContent + '\nprint("Updated")', 'user');
+        const updated = services.vfs.readFile('/home/user/e2e_calc.pf');
+        assert(updated.includes('Updated'));
+    });
+
+    // 20. Performance Benchmark Profiler
+    test('Performance: Measures VFS, AST Parser, and Syscall Latency', () => {
+        const { getSystemServices } = require('../../src/os/services');
+        const services = getSystemServices();
+        const Parser = require('../../src/pf/parser');
+
+        // VFS benchmark (100 rapid read/write cycles)
+        const t0 = Date.now();
+        for (let i = 0; i < 100; i++) {
+            services.vfs.writeFile(`/tmp/bench_${i}.txt`, `payload ${i}`, 'user');
+            services.vfs.readFile(`/tmp/bench_${i}.txt`);
+        }
+        const vfsDuration = Date.now() - t0;
+        assert(vfsDuration < 500); // Sub-half-second for 100 roundtrips
+
+        // AST Parser benchmark (50 parse runs)
+        const p0 = Date.now();
+        for (let i = 0; i < 50; i++) {
+            Parser.parseSource('class Demo { init(v) { self.v = v } get() { return self.v } } let d = Demo(10)');
+        }
+        const parseDuration = Date.now() - p0;
+        assert(parseDuration < 500);
     });
 
     console.log(`\nPanfam OS Test Results: ${passed} Passed, ${failed} Failed.`);

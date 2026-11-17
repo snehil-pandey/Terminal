@@ -173,20 +173,49 @@
         }
 
         handleWorkerSyscall(pid, worker, msg, user) {
+            // Guard: Reject if message is not an object or caller process has already been terminated
+            if (!msg || typeof msg !== 'object') {
+                return;
+            }
+            if (!this.processManager.get(pid)) {
+                try {
+                    worker.postMessage({ type: 'syscall_result', callId: msg.callId, success: false, error: 'ESRCH: Process has terminated' });
+                } catch (_) {}
+                return;
+            }
+
             const { callId, method, args = [] } = msg;
 
             try {
+                if (typeof method !== 'string') {
+                    throw new Error('EINVAL: Invalid syscall signature');
+                }
+                if (!Array.isArray(args)) {
+                    throw new Error('EINVAL: Syscall arguments must be an array');
+                }
+
                 let result = null;
                 switch (method) {
-                    case 'fs.read':
-                        result = this.kernel.sys_read(args[0], pid, user);
+                    case 'fs.read': {
+                        const pathArg = args[0];
+                        if (typeof pathArg !== 'string' || pathArg.length > 1024) throw new Error('EINVAL: Path too long or invalid');
+                        result = this.kernel.sys_read(pathArg, pid, user);
                         break;
-                    case 'fs.write':
-                        result = this.kernel.sys_write(args[0], args[1], pid, user);
+                    }
+                    case 'fs.write': {
+                        const pathArg = args[0];
+                        const contentArg = args[1];
+                        if (typeof pathArg !== 'string' || pathArg.length > 1024) throw new Error('EINVAL: Path too long or invalid');
+                        if (typeof contentArg !== 'string') throw new Error('EINVAL: Content must be a string');
+                        if (contentArg.length > 5 * 1024 * 1024) throw new Error('EFBIG: Payload exceeds 5MB file quota');
+                        result = this.kernel.sys_write(pathArg, contentArg, pid, user);
                         break;
-                    case 'fs.list':
-                        result = this.vfs.readDir(args[0] || '.');
+                    }
+                    case 'fs.list': {
+                        const dirArg = typeof args[0] === 'string' ? args[0] : '.';
+                        result = this.vfs.readDir(dirArg);
                         break;
+                    }
                     case 'sys.meminfo':
                         result = this.kernel.sys_meminfo();
                         break;
@@ -196,6 +225,12 @@
                     case 'sys.uname':
                         result = this.kernel.sys_uname();
                         break;
+                    case 'process.kill': {
+                        const targetPid = parseInt(args[0], 10);
+                        if (isNaN(targetPid)) throw new Error('EINVAL: Target PID required');
+                        result = this.kernel.sys_kill(targetPid, pid, user);
+                        break;
+                    }
                     default:
                         throw new Error(`ENOSYS: Unsupported syscall '${method}'`);
                 }
